@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Little Grad Flyer Generator</title>
+  <style>
+    :root{
+      --bg1:#120021;
+      --bg2:#ff1493;
+      --bg3:#14d9ff;
+      --bg4:#ffe100;
+      --panel:rgba(17,10,40,.78);
+      --panel2:rgba(255,255,255,.08);
+      --line:rgba(255,255,255,.14);
+      --text:#fff;
+      --muted:#d8cfff;
+      --glow:#66ebff;
+      --glow2:#ff4fd8;
+      --gold:#ffd84d;
+      --success:#65ffb8;
+      --danger:#ff8cae;
+      --shadow:0 10px 30px rgba(0,0,0,.35),0 0 25px rgba(102,235,255,.16);
+      --radius:20px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--text);
+      font-family:Inter,Arial,Helvetica,sans-serif;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,225,0,.22), transparent 18%),
+        radial-gradient(circle at 85% 20%, rgba(20,217,255,.18), transparent 20%),
+        radial-gradient(circle at 50% 80%, rgba(255,79,216,.18), transparent 18%),
+        linear-gradient(135deg, #220035 0%, #51004d 28%, #ff1493 58%, #8811ff 100%);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    .floating-bg{position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0}
+    .floaty{
+      position:absolute; opacity:.16; filter:drop-shadow(0 0 14px rgba(255,255,255,.35));
+      animation: drift linear infinite;
+      user-select:none;
+      font-size: clamp(26px, 4vw, 68px);
+    }
+    @keyframes drift{
+      from{transform:translateY(110vh) rotate(0deg)}
+      to{transform:translateY(-20vh) rotate(360deg)}
+    }
+    .wrap{position:relative; z-index:1; width:min(1500px, calc(100% - 24px)); margin:12px auto 40px;}
+    .hero{
+      position:relative;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.04));
+      backdrop-filter: blur(14px);
+      border-radius:28px;
+      box-shadow: var(--shadow);
+      padding:22px 22px 16px;
+      overflow:hidden;
+    }
+    .hero::before{
+      content:"";
+      position:absolute; inset:auto -10% -30% auto; width:320px; height:320px;
+      background:radial-gradient(circle, rgba(255,225,0,.25), transparent 60%);
+      filter: blur(20px);
+    }
+    .title-row{display:flex; gap:16px; justify-content:space-between; align-items:center; flex-wrap:wrap}
+    h1{
+      margin:0;
+      font-size:clamp(2rem, 4vw, 4.4rem);
+      line-height:.95;
+      font-weight:900;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      text-shadow:0 4px 0 rgba(0,0,0,.25), 0 0 18px rgba(20,217,255,.35), 0 0 28px rgba(255,79,216,.35);
+    }
+    .grad{
+      background:linear-gradient(90deg, #fff 0%, #9cf6ff 15%, #ffe666 35%, #ff58d0 60%, #9dc6ff 100%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .badgebar{display:flex; flex-wrap:wrap; gap:10px}
+    .badge{
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.09);
+      padding:10px 14px;
+      border-radius:999px;
+      font-size:.88rem;
+      color:#fff;
+      box-shadow:0 0 18px rgba(255,79,216,.14);
+    }
+    .marquee{
+      margin-top:14px;
+      background:linear-gradient(90deg, rgba(255,225,0,.16), rgba(255,79,216,.16), rgba(20,217,255,.16));
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      white-space:nowrap;
+    }
+    .marquee span{
+      display:inline-block;
+      padding:11px 0;
+      min-width:100%;
+      animation: slide 18s linear infinite;
+      font-weight:700;
+      letter-spacing:.02em;
+      text-shadow:0 0 8px rgba(255,255,255,.15);
+    }
+    @keyframes slide{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+    .grid{display:grid; grid-template-columns: 420px 1fr; gap:18px; margin-top:18px}
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow:hidden;
+    }
+    .left-col{display:flex; flex-direction:column; gap:18px}
+    .panel-head{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    }
+    .panel-head h2,.panel-head h3{margin:0; font-size:1.02rem; letter-spacing:.02em}
+    .subtle{color:var(--muted); font-size:.88rem}
+    .content{padding:14px 14px 16px}
+    .preset-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+    .preset-btn,.ghost-btn,.action-btn,.tiny-btn,.chip,.icon-lock,.copy-btn{
+      border:none; cursor:pointer; color:#fff; transition:.2s ease; font-weight:700;
+    }
+    .preset-btn{
+      background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border:1px solid rgba(255,255,255,.16); border-radius:16px; padding:12px 12px; text-align:left;
+      box-shadow:0 0 16px rgba(20,217,255,.08);
+    }
+    .preset-btn:hover,.ghost-btn:hover,.action-btn:hover,.tiny-btn:hover,.chip:hover,.copy-btn:hover{transform:translateY(-1px); filter:brightness(1.06)}
+    .preset-btn.active{background:linear-gradient(135deg, rgba(255,79,216,.34), rgba(20,217,255,.34)); box-shadow:0 0 18px rgba(20,217,255,.22)}
+    .action-row{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+    .action-btn{
+      padding:13px 12px; border-radius:14px; background:linear-gradient(135deg, rgba(255,79,216,.26), rgba(20,217,255,.24));
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 0 18px rgba(255,79,216,.14);
+    }
+    .ghost-btn{padding:12px; border-radius:14px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16)}
+    .stack{display:flex; flex-direction:column; gap:12px}
+    .collapsible{border-top:1px solid rgba(255,255,255,.1)}
+    .collapsible:first-child{border-top:none}
+    .collapsible summary{
+      list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:14px 16px; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025));
+    }
+    .collapsible summary::-webkit-details-marker{display:none}
+    .summary-left{display:flex; align-items:center; gap:10px; min-width:0}
+    .pill{padding:5px 9px; border-radius:999px; font-size:.72rem; background:rgba(102,235,255,.15); border:1px solid rgba(102,235,255,.32)}
+    .summary-title{font-weight:800}
+    .summary-tools{display:flex; align-items:center; gap:8px}
+    .icon-lock,.tiny-btn{
+      padding:7px 10px; border-radius:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); font-size:.78rem;
+    }
+    .icon-lock.locked{background:linear-gradient(135deg, rgba(255,225,0,.22), rgba(255,79,216,.22)); border-color:rgba(255,225,0,.42)}
+    .section-body{padding:14px 16px 18px; display:grid; gap:10px}
+    label{display:block; font-size:.9rem; color:#f2edff; margin-bottom:6px; font-weight:700}
+    select,input[type="text"],textarea{
+      width:100%; background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.16);
+      border-radius:14px; padding:12px 12px; outline:none;
+    }
+    select option{color:#111}
+    textarea{min-height:140px; resize:vertical}
+    .mini-note{font-size:.78rem; color:var(--muted)}
+    .multi-wrap{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      padding:10px 12px; border-radius:999px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16);
+      font-size:.88rem;
+    }
+    .chip.active{background:linear-gradient(135deg, rgba(255,79,216,.34), rgba(20,217,255,.34)); box-shadow:0 0 16px rgba(20,217,255,.22)}
+    .slider-row{display:grid; gap:10px}
+    .slider-box{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:10px 12px}
+    .slider-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; font-weight:700}
+    input[type="range"]{width:100%}
+    .outputs{display:grid; gap:18px}
+    .out-card{border:1px solid var(--line); background:rgba(255,255,255,.055); border-radius:18px; overflow:hidden}
+    .out-head{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+    .copy-btn{padding:9px 12px; border-radius:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16)}
+    .output{padding:14px; white-space:pre-wrap; line-height:1.55; color:#fff}
+    .variations{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px}
+    .variation-box{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:16px; padding:12px; min-height:170px; white-space:pre-wrap}
+    .history-item{padding:12px; border-radius:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); margin-bottom:10px; white-space:pre-wrap}
+    .footer{margin-top:20px; text-align:center; color:#f4e9ff; opacity:.88; font-weight:700; letter-spacing:.03em}
+    .scroll-btns{position:fixed; right:14px; bottom:18px; z-index:5; display:flex; flex-direction:column; gap:10px}
+    .scroll-btn{
+      width:54px; height:54px; border-radius:18px; border:1px solid rgba(255,255,255,.22);
+      background:linear-gradient(135deg, rgba(255,79,216,.3), rgba(20,217,255,.3)); color:#fff; font-size:1.4rem;
+      box-shadow:0 0 22px rgba(255,79,216,.28), 0 0 24px rgba(20,217,255,.18);
+      cursor:pointer;
+    }
+    .hidden{display:none !important}
+    .ref-upload-wrap{
+      display:grid;
+      gap:10px;
+      padding:14px 16px 18px;
+      border-top:1px solid rgba(255,255,255,.1);
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    }
+    .toggle-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .toggle-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.16);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .toggle-pill.active{
+      background:linear-gradient(135deg, rgba(255,79,216,.34), rgba(20,217,255,.34));
+      box-shadow:0 0 16px rgba(20,217,255,.22);
+    }
+    .disabled-section{
+      opacity:.55;
+      pointer-events:none;
+    }
+    input[type="file"]{
+      width:100%;
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:12px;
+      outline:none;
+    }
+    @media (max-width: 1180px){
+      .grid{grid-template-columns:1fr}
+      .left-col{order:2}
+    }
+    @media (max-width: 760px){
+      .preset-grid,.action-row,.variations{grid-template-columns:1fr}
+      .wrap{width:min(100% - 12px, 1500px)}
+      .hero{padding:16px 14px 12px}
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-bg" id="floatingBg"></div>
+
+  <div class="wrap" id="top">
+    <section class="hero panel">
+      <div class="title-row">
+        <div>
+          <h1><span class="grad">Little Grad Flyer Generator</span></h1>
+          <div class="subtle">Premium AI image prompt builder for glossy kid graduation flyer visuals</div>
+        </div>
+        <div class="badgebar">
+          <div class="badge">Full-Body Default</div>
+          <div class="badge">Glossy 8K Finish</div>
+          <div class="badge">Poster/Flyer Styling</div>
+          <div class="badge">Reference-Matched Look</div>
+        </div>
+      </div>
+      <div class="marquee"><span>✨Scroll-Stopping Content  • Premium Images • Because We’re Not Here to Look Broke ✨ &nbsp;&nbsp;&nbsp; ✨Scroll-Stopping Content  • Premium Images • Because We’re Not Here to Look Broke ✨</span></div>
+    </section>
+
+    <div class="grid">
+      <aside class="left-col">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Presets</h2>
+            <span class="subtle">25 polished looks</span>
+          </div>
+          <div class="content">
+            <div class="preset-grid" id="presetGrid"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Main Controls</h2>
+            <span class="subtle">Generate, save, remix</span>
+          </div>
+          <div class="content stack">
+            <div class="action-row">
+              <button class="action-btn" id="generateBtn">Generate</button>
+              <button class="action-btn" id="randomBtn">Random</button>
+              <button class="action-btn" id="clearBtn">Clear All</button>
+              <button class="action-btn" id="copyMainBtn">Copy</button>
+              <button class="action-btn" id="savePromptBtn">Save Prompt</button>
+              <button class="action-btn" id="variationsBtn">3 More Variations</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Photo Reference</h2>
+            <span class="subtle">Optional upload toggle</span>
+          </div>
+          <div class="ref-upload-wrap">
+            <div class="toggle-row">
+              <button type="button" class="toggle-pill" id="photoReferenceToggle">
+                <span>Use uploaded photo as reference</span>
+              </button>
+              <input type="checkbox" id="usePhotoReference" style="display:none" />
+              <span class="subtle" id="photoReferenceStatus">Off</span>
+            </div>
+            <div class="mini-note">Turn this on only when you plan to upload a photo in your image tool.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Suno Music Controls</h2>
+            <span class="subtle">Chip-style + sliders</span>
+          </div>
+          <div class="content stack">
+            <div>
+              <label>Genre Selection</label>
+              <div id="genreChips" class="multi-wrap"></div>
+            </div>
+            <div>
+              <label>Style Influence Selection</label>
+              <div id="styleChips" class="multi-wrap"></div>
+            </div>
+            <div>
+              <label>Vocal Type</label>
+              <div id="vocalChips" class="multi-wrap"></div>
+            </div>
+            <div class="slider-row">
+              <div class="slider-box">
+                <div class="slider-head"><span>Weirdness</span><span id="weirdnessVal">35%</span></div>
+                <input id="weirdness" type="range" min="0" max="100" value="35" />
+              </div>
+              <div class="slider-box">
+                <div class="slider-head"><span>Style Influence</span><span id="styleInfluenceVal">60%</span></div>
+                <input id="styleInfluence" type="range" min="0" max="100" value="60" />
+              </div>
+              <div class="slider-box">
+                <div class="slider-head"><span>Audio Influence</span><span id="audioInfluenceVal">70%</span></div>
+                <input id="audioInfluence" type="range" min="0" max="100" value="70" />
+              </div>
+            </div>
+            <button class="ghost-btn" id="generateMusicBtn">Generate Music Outputs</button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="panel">
+        <div class="panel-head">
+          <h2>Generator Builder</h2>
+          <span class="subtle">Reference-inspired glossy graduation flyer prompt system</span>
+        </div>
+        <div id="sectionsHost"></div>
+      </main>
+    </div>
+
+    <section class="panel" style="margin-top:18px;">
+      <div class="panel-head">
+        <h2>Generated Outputs</h2>
+        <span class="subtle">Main prompt + expansion suites</span>
+      </div>
+      <div class="content outputs">
+        <div class="out-card">
+          <div class="out-head"><strong>Main Prompt Output</strong><button class="copy-btn" data-copy-target="mainOutput">Copy</button></div>
+          <div class="output" id="mainOutput"></div>
+        </div>
+
+        <div class="out-card">
+          <div class="out-head"><strong>3 More Variations</strong><button class="copy-btn" data-copy-target="variationsOutputText">Copy</button></div>
+          <div class="output" id="variationsOutputText"></div>
+          <div class="content"><div class="variations" id="variationsOutput"></div></div>
+        </div>
+
+        <div class="out-card">
+          <div class="out-head"><strong>8-Second Animated Video Script</strong><button class="copy-btn" data-copy-target="videoOutput">Copy</button></div>
+          <div class="output" id="videoOutput"></div>
+        </div>
+
+        <div class="out-card">
+          <div class="out-head"><strong>Suno Music Outputs</strong><button class="copy-btn" data-copy-target="sunoSettingsOutput">Copy Settings</button></div>
+          <div class="content outputs">
+            <div class="out-card"><div class="out-head"><strong>Jingle</strong><button class="copy-btn" data-copy-target="jingleOutput">Copy</button></div><div class="output" id="jingleOutput"></div></div>
+            <div class="out-card"><div class="out-head"><strong>30-Second Song</strong><button class="copy-btn" data-copy-target="song30Output">Copy</button></div><div class="output" id="song30Output"></div></div>
+            <div class="out-card"><div class="out-head"><strong>1-Minute Song</strong><button class="copy-btn" data-copy-target="song60Output">Copy</button></div><div class="output" id="song60Output"></div></div>
+            <div class="out-card"><div class="out-head"><strong>Suggested Suno Settings</strong><button class="copy-btn" data-copy-target="sunoSettingsOutput">Copy</button></div><div class="output" id="sunoSettingsOutput"></div></div>
+          </div>
+        </div>
+
+        <div class="out-card">
+          <div class="out-head"><strong>Marketing Content Suite</strong><button class="ghost-btn" id="generateMarketingBtn">Generate Marketing Suite</button></div>
+          <div class="content outputs" id="marketingOutputs"></div>
+        </div>
+
+        <details class="out-card" open>
+          <summary class="panel-head"><h3>Custom GPT Instructions</h3><span class="subtle">3 separate outputs</span></summary>
+          <div class="content outputs">
+            <div class="out-card"><div class="out-head"><strong>Custom GPT Instructions</strong><button class="copy-btn" data-copy-target="gptInstructionsOutput">Copy</button></div><div class="output" id="gptInstructionsOutput"></div></div>
+            <div class="out-card"><div class="out-head"><strong>Starter Questions</strong><button class="copy-btn" data-copy-target="starterQuestionsOutput">Copy</button></div><div class="output" id="starterQuestionsOutput"></div></div>
+            <div class="out-card"><div class="out-head"><strong>Knowledge</strong><button class="copy-btn" data-copy-target="knowledgeOutput">Copy</button></div><div class="output" id="knowledgeOutput"></div></div>
+          </div>
+        </details>
+
+        <details class="out-card">
+          <summary class="panel-head"><h3>Prompt History</h3><span class="subtle">Saved prompts</span></summary>
+          <div class="content" id="historyOutput"></div>
+        </details>
+      </div>
+    </section>
+
+    <div class="footer">all rights reserved by glamorousgrammyglowup</div>
+  </div>
+
+  <div class="scroll-btns">
+    <button class="scroll-btn" id="scrollTopBtn">↑</button>
+    <button class="scroll-btn" id="scrollBottomBtn">↓</button>
+  </div>
+
+  <script>
+    const none = "None";
+    const state = {
+      values: {},
+      custom: {},
+      locked: {},
+      selectedGenres: new Set(["Pop", "R&B"]),
+      selectedStyles: new Set(["Beyoncé", "SZA"]),
+      selectedVocal: new Set(["Vocal"]),
+      history: [],
+      previousRandoms: [],
+      cycleLimit: 500,
+      currentPrompt: "",
+      currentVariations: [],
+      usePhotoReference: false,
+      uploadedPhotoName: ''
+    };
+
+    const themedFloaters = ["🎓","🖍️","📚","✨","🌈","🏁","✏️","🎉","⭐","🧸","📓","💖","🚗","🎈"];
+    const floatingBg = document.getElementById('floatingBg');
+    for(let i=0;i<28;i++){
+      const el=document.createElement('div');
+      el.className='floaty';
+      el.textContent=themedFloaters[i%themedFloaters.length];
+      el.style.left=Math.random()*100+'vw';
+      el.style.animationDuration=(18+Math.random()*18)+'s';
+      el.style.animationDelay=(-Math.random()*18)+'s';
+      el.style.fontSize=(26+Math.random()*46)+'px';
+      floatingBg.appendChild(el);
+    }
+
+    const categories = [
+      {key:'aspectRatio', title:'Aspect Ratio', tag:'core', type:'single', custom:true, options:[none,'1:1','16:9','2:3','21:9','3:2','3:4','4:3','4:5','5:4','9:16']},
+      {key:'artStyle', title:'Art Style', tag:'style', type:'multi', custom:true, options:[none,'3D character poster','Airbrushed school-flyer glam','Bold kids-event flyer art','Cartoon-luxe portrait flyer','Chalk-doodle fantasy flyer','Clean editorial flyer','Color-burst celebration art','Commercial poster composite','Confetti-rich glam poster','Crisp promo flyer realism','Cute classroom collage flyer','Dreamy soft glam composite','Glossy ad-poster realism','High-impact youth promo art','Hyper-real graduation portrait','Illustrated mixed-media flyer','Magazine-cover flyer glam','Neon glam celebration art','Photo-collage promo flyer','Playful premium poster art','Posterized portrait composite','School milestone glam flyer','Scrapbook flyer glam','Shiny printed-flyer realism','Soft toybox glam flyer','Sparkle-heavy celebration art','Sticker-layered flyer art','Studio composite flyer','Sweet pastel promo art','Typography-led event flyer','Ultra-glossy kid promo art','Vibrant celebratory realism','Youth event luxury flyer','storybook flyer composite']},
+      {key:'background', title:'Background', tag:'scene', type:'multi', custom:true, options:[none,'Blurred school hallway','Candy pink glow backdrop','Classroom chalk wall','Cloud doodle backdrop','Color-block poster wall','Confetti burst background','Crayon sketch background','Decorated stage backdrop','Dream board collage','Foam number backdrop','Glossy studio gradient','Glowing bokeh stage','Graduation spotlight scene','Hallway banner wall','Hot pink radial burst','Kid celebration set','Layered paper-cut backdrop','Learning corner backdrop','Light beam stage','Notebook paper wall','Pastel party backdrop','Playroom glam set','Rainbow sketch wall','School gym celebration','School library nook','School photo backdrop','Sparkle confetti stage','Star-scribble backdrop','Sticker collage wall','Storybook classroom wall','Studio balloon wall','Studio curtain backdrop','Studio white sweep','Sunburst flyer backdrop','Toy shelf backdrop','Trophy wall backdrop','Tunnel of lights backdrop','Velvet glam backdrop','Warm celebration backdrop','Watercolor paper wall','White cloud studio set','Whimsical pastel wall','Window-light classroom set','Yellow glow backdrop','Blue shimmer backdrop','Pink sparkle stage','Graduation cap pattern wall','School desk backdrop','Sweet party backdrop','Checkerboard celebration wall']},
+      {key:'backgroundElements', title:'Background Elements', tag:'scene', type:'multi', custom:true, options:[none,'ABC letters','Balloon clusters','Books stack','Bubbles','Celebration stars','Checker flags','Chalk pieces','Cloud doodles','Confetti shower','Crayon box','Cupcake toppers','Diploma ribbons','Foam numerals','Garland strands','Gift bows','Glitter stars','Gold tassels','Graduation caps','Happy face stickers','Heart doodles','Light sparkles','Lightning streaks','Marquee sparkles','Mini trophies','Music notes','Paper airplanes','Party streamers','Pencil shavings','Pencils','Polka dots','Rainbow arcs','Ribbon curls','Rockets','School bus doodles','School icons','Scribble hearts','Shimmer dust','Shooting stars','Spark trails','Star confetti','Sticker splashes','Sun doodles','Tassel strands','Toy blocks','Trophy icons','Twinkle dots','Whimsical swirls','Candy stars','Balloon ribbons','Smile icons']},
+      {key:'cameraAngle', title:'Camera Angle', tag:'camera', type:'single', custom:true, options:[none,'Centered eye-level hero shot','Dynamic low-angle flyer shot','Front-facing poster shot','Full-body straight-on shot','Gentle three-quarter view','Heroic kid-level angle','Slight top-down poster view','Studio eye-level full-body']},
+      {key:'colorPalette', title:'Color Palette', tag:'style', type:'multi', custom:true, options:[none,'Aqua + yellow + pink','Baby blue + white','Black + gold + magenta','Blue + silver + white','Blush pink + cream','Bubblegum pink + gold','Candy pink + turquoise','Coral + cream + gold','Crayon rainbow mix','Electric blue + cyan','Fuchsia + purple + gold','Gold + bubblegum pink','Hot pink + lemon yellow','Lavender + peach + cream','Lemon + aqua + white','Lilac + sky blue','Mint + lilac + blush','Mint + white + gold','Neon pink + aqua','Pastel rainbow mix','Peach + pink + cream','Pink + gold + white','Purple + sunshine yellow','Race blue + black + white','Rainbow primary mix','Red + yellow + blue','Rose gold + blush','Royal blue + gold','Soft coral + aqua','Soft pastel rainbow','Strawberry pink + cream','Sunshine yellow + aqua','Teal + pink + white','Teal + white + gold','Turquoise + lavender','Violet + silver + white','White + gold + blush','White + violet + pink','Yellow + fuchsia + cyan','Blue + yellow + white','Pink + purple + aqua','Orange + pink + gold','Green + yellow + blue','Periwinkle + blush + cream','Sky blue + lemon + white','Magenta + orange + gold','Cotton candy mix','Aqua + coral + yellow','Purple + pink + gold','Bright rainbow confetti mix','Navy + silver + white','Black + red + silver','Cobalt blue + gray','Forest green + gold','Royal blue + black','Teal + navy + white','Red + black + white','Steel blue + silver','Orange + navy + white','Green + blue + yellow','Charcoal + gold + white','Blue + orange + white']},
+      {key:'effects', title:'Effects', tag:'fx', type:'multi', custom:true, options:[none,'Airbrushed glow','Bokeh sparkle haze','Candy shine','Confetti motion blur','Dreamy bloom','Foil shimmer','Gloss highlights','Glowing outlines','Lens flare streaks','Light leaks','Metallic shine','Motion sparkle trails','Soft glitter fog','Star twinkles','Studio polish finish','Balloon shine glow','Clean glossy finish','Color-pop glow','Confetti float effect','Dream sparkle mist','Floating glitter dust','Gentle glow haze','Glass-like shine','Glossy depth boost','Glow burst accents','Light sparkle overlay','Luminous edge glow','Magic shimmer effect','Mirror-like highlights','Pastel bloom wash','Photo-finish polish','Printed flyer sheen','Soft halo lighting','Soft shine coating','Sparkle mist accents','Starburst gleam','Subtle glam gloss','Sun-kissed glow','Twinkle shimmer layer','Velvet glow finish','Warm highlight bloom','Whimsical shine accents','Clean retouch polish','Bright pop finish','Celebration glitter glow','Glossy reflection accents','Polished poster shine','Sweet sparkle wash','Toy-like glossy finish','Soft bokeh sparkle']},
+      {key:'facialExpression', title:'Facial Expression', tag:'character', type:'single', custom:true, options:[none,'Big proud smile','Big toothy grin','Bright excited grin','Calm confident smile','Cheeky playful grin','Cute little smile','Delighted smile','Excited open smile','Gentle happy smile','Giggle smile','Glowing happy grin','Happy closed-mouth smile','Happy open-mouth smile','Happy surprised face','Joyful glowing smile','Joyful grin','Little laugh smile','Playful side smile','Proud little grin','Proud smile','Quiet happy smile','Radiant smile','Shy happy grin','Shy smile','Sleepy little smile','Soft cheerful smile','Soft happy grin','Soft proud smile','Sparkly-eyed smile','Sweet excited smile','Sweet gentle smile','Sweet grin','Sweet shy smile','Tiny grin','Tiny smile','Warm cheerful smile','Warm grin','Warm happy smile','Wide happy expression','Wide joyful smile','Wonder-filled smile','Beaming smile','Cute proud smile','Playful happy face','Smiley little face','Bright joyful face','Happy sparkle smile','Adorable grin','Sunny smile','Confident happy grin']},
+      {key:'facialFeatures', title:'Facial Features', tag:'character', type:'multi', custom:true, options:[none,'Bright almond eyes','Bright round eyes','Button nose','Childlike rounded cheeks','Chubby cheeks','Defined baby hairs','Dimples','Full cheeks','Gentle smile lines','Little button nose','Little dimples','Long eyelashes','Petite nose','Rosy cheeks','Round cheeks','Round face','Small chin','Small nose','Smooth cheeks','Soft baby face','Soft cheekbones','Soft chin','Soft jawline','Soft toddler cheeks','Sweet dimples','Tiny nose','Warm smile lines','Wide bright eyes','Youthful cheeks','Button-like nose','Cute rounded face','Full smile cheeks','Gentle brow shape','Little rosy cheeks','Petite facial features','Round little nose','Soft face shape','Soft rounded nose','Soft rounded cheeks','Sweet cheek dimples','Tiny rounded chin','Tiny rounded nose','Warm bright eyes','Wide soft eyes','Young cherub cheeks','Glossy eyes','Bright smile shape','Tiny cupid bow lips','Soft natural lips','Little apple cheeks']},      {key:'fontStyle', title:'Font Style', tag:'text', type:'multi', custom:true, options:[none,'Balloon bubble title','Bold athletic block text','Brush-script name','Candy chrome letters','Cartoon school font','Chalk doodle letters','Chunky 3D bubble letters','Clean luxe sans-serif','Comic pop letters','Foam number typography','Glossy gel letters','Handwritten classroom marker','Layered script + bold combo','Mixed playful type','Rounded bold title','Sticker-style lettering','Big celebration letters','Bold confetti font','Bold flyer headline','Bubblegum party letters','Candy swirl lettering','Cheerful classroom script','Childlike marker font','Color-pop title font','Cute chalkboard script','Cute doodle lettering','Dreamy pastel lettering','Fun banner font','Fun foam-cut letters','Glossy balloon letters','Happy party script','High-impact title font','Kid poster headline','Little star lettering','Playful block letters','Playful sparkle script','Polished party headline','Rainbow bubble font','Rounded celebration script','School flyer block font','School poster title font','Shiny sticker headline','Soft bubble script','Sparkle gel lettering','Sweet celebration font','Tiny trendsetter title','Toybox headline font','Whimsical party letters','Yearbook-style headline','Youth flyer headline']},
+      {key:'lighting', title:'Lighting', tag:'camera', type:'multi', custom:true, options:[none,'Bright commercial studio light','Candy-color glow lighting','Clean beauty lighting','Confetti spotlight blend','Crisp poster lighting','Front-lit flyer lighting','Glossy softbox lighting','Hero spotlight with rim light','High-key celebration light','Luxury print lighting','Neon edge lighting','Soft glam studio light','Balloon-reflect light','Bright classroom light','Bright daylight studio light','Clean front spotlight','Color-pop studio glow','Dreamy soft focus light','Even beauty light','Flyer-ready key light','Gentle classroom window light','Glossy keynote lighting','Golden party glow','High-shine commercial light','Kid party spotlight','Light bounce fill lighting','Luminous pastel lighting','Photo-day school lighting','Pink glow rim light','Playful bounce lighting','Polished event lighting','Poster-ready flash lighting','Rainbow glow lighting','Ribbon-soft lighting','School hallway lighting','Shimmer spotlight lighting','Soft boxy studio light','Soft daylight glow','Soft overhead celebration light','Soft side glow lighting','Sparkle bounce light','Stage entrance lighting','Studio flash + fill light','Sweet pastel glow light','Toy-store bright lighting','Warm celebration light','Window-lit school portrait light','Blue glow accent lighting','Glossy party light','Clean white spotlight']},
+      {key:'location', title:'Location', tag:'scene', type:'single', custom:true, options:[none,'Classroom set','Colorful school hallway','Decorated graduation stage','Flyer-ready blank studio','Kid photo backdrop','Playroom photo set','School photo area','Storybook learning corner','Toybox fantasy set','Art classroom corner','Balloon party corner','Book fair table setup','Bright classroom wall','Candy-themed photo set','Celebration entrance area','Ceremony stage stairs','Checkerboard party set','Confetti photo booth','Creative learning nook','Desk-and-books setup','Fun studio corner','Graduation banner wall','Graduation photo booth','Hallway locker area','Indoor party stage','Kindergarten classroom','Library reading corner','Mini trophy display area','Notebook paper photo wall','Paper star backdrop area','Pastel photo studio','Play table setup','Reading rug corner','School desk area','School entryway set','School gym photo spot','School library nook','School stage wings','Sparkle curtain set','Sticker wall set','Studio balloon corner','Studio celebration set','Sunburst wall setup','Sweet party corner','Toy shelf corner','Trophy table area','Window-light classroom corner','Writing station set','Yearbook photo spot','Learning center backdrop']},
+      {key:'ornateElements', title:'Ornate Elements', tag:'fx', type:'multi', custom:true, options:[none,'Diamond sparkles','Foil trim','Gem accents','Gloss beads','Gold flourishes','Holographic stickers','Metallic edges','Ribbon curls','Shiny stars','Soft pearl accents','Balloon bows','Candy jewels','Celebration gems','Confetti ribbons','Crystal dots','Cute pearl trim','Decorative bows','Fancy frame accents','Foil stars','Glitter bows','Glossy ribbons','Gold star trim','Happy sparkle trim','Heart gem accents','Iridescent details','Jewel sparkles','Layered bows','Little crown details','Luxe bead trim','Mini gem clusters','Pastel pearl accents','Pearl dots','Playful shine trim','Pretty ribbon swirls','Rainbow crystal dots','Rosette details','Shimmer bead accents','Shiny frame corners','Soft glitter trim','Sparkle flourishes','Star gem accents','Sweet decorative trim','Tiny foil hearts','Tiny gem drops','Tiny pearl clusters','Twinkle bead trim','Whimsical frame accents','Ribbon sparkle details','Golden confetti trim','Party glam accents']},
+      {key:'products', title:'Products', tag:'theme', type:'multi', custom:true, options:[none,'ABC blocks','Books','Certificate cover','Chalk set','Crayon box','Diploma roll','Foam number year','Mini backpack','Notebook','Pencil','Race car prop','Stuffed mascot','Trophy','Award ribbon','Balloon bouquet','Bookshelf prop','Cap and tassel set','Celebration banner','Certificate frame','Classroom globe','Colorful clipboard','Confetti popper','Cute lunchbox','Desk nameplate','Foam star prop','Gift box','Graduation cap prop','Happy face sign','Kid chair prop','Learning tablet prop','Letter blocks','Little pennant flag','Mini chalkboard sign','Mini diploma tube','Mini gift bag','Mini school bus prop','Number blocks','Party hat prop','Pencil cup','Prize rosette','Reading book stack','Report card prop','School bell prop','School folder','School ruler','Smiley face prop','Star wand prop','Storybook prop','Toy apple prop','Winner medal']},      {key:'shadow', title:'Shadow', tag:'camera', type:'multi', custom:true, options:[none,'Clean commercial shadows','Crisp grounded shadow','Glossy flyer shadow','Minimal poster shadow','Soft drop shadow','Soft studio floor shadow','Balanced soft shadow','Clean floor shadow','Clean light shadow','Crisp side shadow','Feathered floor shadow','Gentle grounding shadow','Glossy contact shadow','Light edge shadow','Low contrast shadow','Natural studio shadow','Polished floor shadow','Poster-style depth shadow','Printed flyer shadow','Rounded soft shadow','Sharp floor shadow','Shiny product-style shadow','Soft bounce shadow','Soft cast shadow','Soft contact shadow','Soft corner shadow','Soft glamour shadow','Soft halo shadow','Soft poster depth shadow','Soft reflective shadow','Soft spotlight shadow','Soft stage shadow','Subtle depth shadow','Subtle grounding shadow','Subtle side shadow','Tiny floor shadow','Warm soft shadow','Window-light shadow','Clean silhouette shadow','Gentle side shadow','Balanced poster shadow','Smooth floor shadow','Natural drop shadow','Bright studio shadow','Soft anchor shadow','Crisp anchor shadow','Polished cast shadow','Light poster shadow','Event-stage shadow','Studio edge shadow']},
+      {key:'textOption', title:'Text Option', tag:'text', type:'multi', custom:true, options:[none,'Class of year text','Event date text','Graduate name display','Look out statement','Pre-K / Kindergarten title','School name line','Special edition text','Tagline slogan','Proud family message','Celebration headline','Little star spotlight text','Honor roll headline','Tiny graduate spotlight','Milestone moment title','Photo-day headline','Big dreamer title','School pride line','Mini achiever text','Stage-ready headline','Proud graduate banner','Sweet success line','Dream big statement','Future star headline','Little leader text','Prize-day headline','Achievement banner','School celebration title','Bright future line','Tiny scholar title','Classroom champion text','Graduation day headline','Big smile banner','Smart cookie line','Shining star text','Little legend headline','Cute ceremony title','Picture-perfect headline','Kindergarten keepsake line','Joyful moment title','Cap and smile text','Proud moment headline','School-year celebration line','Star student banner','Mini superstar text','Yearbook-ready headline','Big accomplishment line','Happy graduate title','Sweet school memory line','Tiny trailblazer text','Victory day banner','Event time text','Venue name line','Address line','RSVP line','Admission line','Hosted by line','Dress code line','Doors open text']},
+      {key:'eventDate', title:'Event Date', tag:'event', type:'single', custom:true, options:[none,'Saturday, May 24','Sunday, May 25','Friday, May 30','Saturday, May 31','Sunday, June 1','Friday, June 6','Saturday, June 7','Sunday, June 8']},
+      {key:'graduationYear', title:'Graduation Year', tag:'event', type:'single', custom:true, options:[none,'2026','2027','2028','2029','2030','2031','2032','2033','2034','2035']},
+      {key:'eventTime', title:'Event Time', tag:'event', type:'single', custom:true, options:[none,'10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM']},
+      {key:'eventVenue', title:'Event Venue', tag:'event', type:'single', custom:true, options:[none,'School Auditorium','School Gym','Cafeteria Stage','Community Center','Church Hall','Banquet Room','Event Hall','School Cafeteria']},
+      {key:'eventAddress', title:'Event Address', tag:'event', type:'single', custom:true, options:[none,'123 Main Street','456 Oak Avenue','789 Park Lane','101 School Road','202 Celebration Drive','303 Rainbow Way']},
+      {key:'eventRSVP', title:'RSVP', tag:'event', type:'single', custom:true, options:[none,'RSVP by May 20','RSVP by May 25','Please RSVP today','Call to RSVP','Text to RSVP','Limited seating']},
+      {key:'finish', title:'Finish', tag:'core', type:'single', custom:true, options:[none,'8K glossy finish','Airbrushed premium finish','Billboard-sharp finish','Luxury printed-poster finish','Satin-gloss composite finish','Ultra-polished flyer finish','Bright commercial finish','Clean poster finish','Crisp ad-ready finish','Glossy flyer finish','High-shine premium finish','Luxury photo finish','Polished studio finish','Print-ready glam finish','Smooth glossy finish','Soft luxe finish','Ultra-clean composite finish','Vibrant poster finish','Balloon-shine finish','Bright polished finish','Candy-gloss finish','Child-friendly polished finish','Commercial poster finish','Confetti-gloss finish','Crisp flyer finish','Deluxe glam finish','Event-ready finish','Gloss-coated finish','Glossy ad finish','High-definition poster finish','Kid-photo premium finish','Magazine-gloss finish','Photo-retouched finish','Polished print finish','Premium keepsake finish','Premium school-flyer finish','Retail-poster finish','Satin poster finish','Shimmer-gloss finish','Smooth commercial finish','Soft-glow premium finish','Sparkle-finish polish','Studio-luxe finish','Super glossy finish','Sweet celebration finish','Toy-like glossy finish','Ultra-bright finish','Ultra-crisp flyer finish','Velvet-gloss finish','Yearbook-premium finish']},
+{key:'pose', title:'Pose', tag:'character', type:'single', custom:true, options:[none,'Both hands holding diploma','Both hands on hips','Cheerful bounce pose','Clapping pose','Cute side step pose','Excited jump pose','Gentle wave pose','Hands clasped in front','Hands clasped under chin','Hands by sides pose','Hands holding backpack straps','Hands holding cap','Hands holding books','Hands holding tassel','Little curtsy pose','Little dance pose','One foot forward full-body pose','One hand holding diploma','One hand on hip','One hand up wave','Proud standing pose','Running-in-place pose','Sitting on books','Sitting pose with smile','Soft side lean pose','Standing with feet together','Standing with peace sign','Standing with one knee bent','Sweet twirl pose','Tiptoe pose','Walking pose','Waving with smile','Arms open pose','Big celebration pose','Diploma up pose','Happy bounce stance','Happy march pose','Joyful skip pose','Little pageant pose','Little superstar pose','Photo-day pose','Playful pose with wave','Posed with backpack','Proud cap-touch pose','School picture stance','Shiny star pose','Smiling stage pose','Sweet celebration stance','Tiny model pose','Victory pose']},
+      {key:'gender', title:'Gender', tag:'character', type:'single', custom:true, genderAware:true, options:[none,'Girl','Boy']},
+      {key:'ethnicity', title:'Ethnicity', tag:'character', type:'single', custom:true, options:[none,'African American','Afro-Caribbean','Afro-Latina','African','American','Arab','Asian','Asian American','Biracial Black','Biracial White','Black American','Caribbean Black','Caribbean','Central American','East African','East Asian','European','Filipino','French','German','Ghanaian','Haitian','Hispanic','Indian','Indigenous','Italian','Jamaican','Japanese','Korean','Latina','Latino','Mexican','Middle Eastern','Mixed race','Native American','Nigerian','North African','Pacific Islander','Puerto Rican','South Asian','South American','Southeast Asian','Spanish','Trinidadian','West African','White','White American','Biracial Black and White','Mixed Black and Latina','Mixed Asian and White']},
+      {key:'skinTone', title:'Skin Tone', tag:'character', type:'single', custom:true, options:[none,'Deep ebony','Espresso brown','Golden brown','Light beige','Light brown','Light caramel','Light cocoa','Light golden','Light ivory','Light olive','Medium beige','Medium brown','Medium caramel','Medium cocoa','Medium deep brown','Medium golden','Medium olive','Mocha brown','Porcelain','Rich brown','Soft almond','Soft beige','Soft bronze','Soft caramel','Soft chestnut','Soft cocoa','Soft golden','Soft honey','Soft ivory','Soft mocha','Soft olive','Soft peach','Soft sand','Tan beige','Tan brown','Tan caramel','Tan golden','Warm almond','Warm beige','Warm bronze','Warm caramel','Warm chestnut','Warm honey','Warm ivory','Warm mahogany','Warm mocha','Warm olive','Warm sand','Deep bronze','Rich mahogany']},
+      {key:'eyeColor', title:'Eye Color', tag:'character', type:'single', custom:true, options:[none,'Amber','Bright blue','Bright brown','Bright gray','Bright green','Bright hazel','Chocolate brown','Cool gray','Dark blue','Dark brown','Dark gray','Deep brown','Deep hazel','Golden brown','Golden hazel','Gray-blue','Gray-green','Green-hazel','Honey brown','Honey hazel','Light blue','Light brown','Light gray','Light green','Light hazel','Medium brown','Ocean blue','Olive hazel','Rich brown','Rich dark brown','Sky blue','Soft amber','Soft blue','Soft brown','Soft gray','Soft green','Soft hazel','Sparkling blue','Sparkling brown','Sparkling hazel','Warm amber','Warm brown','Warm gray','Warm green','Warm hazel','Deep black-brown','Chestnut brown','Golden green','Deep green','Velvet brown']},
+      {key:'hairColor', title:'Hair Color', tag:'character', type:'single', custom:true, options:[none,'Ash black','Ash brown','Auburn brown','Black','Blue-black','Caramel brown','Chestnut brown','Chocolate brown','Copper brown','Dark ash brown','Dark blonde','Dark brown','Dark chestnut','Deep brown','Espresso brown','Golden black','Golden brown','Golden dark blonde','Honey black','Honey blonde','Honey brown','Jet black','Light auburn','Light brown','Light chestnut','Light golden brown','Medium ash brown','Medium blonde','Medium brown','Mocha brown','Natural black','Natural black-brown','Natural brunette','Rich auburn','Rich brown','Sandy blonde','Soft black','Soft brown','Soft caramel brown','Soft chestnut','Soft cocoa brown','Soft golden brown','Soft honey brown','Strawberry blonde','Warm black','Warm brown','Warm chestnut','Warm dark brown','Warm honey brown','Warm light brown']},
+      {key:'hairstyle', title:'Hairstyle', tag:'character', type:'single', custom:true, girlOnly:false, options:[none,'Afro puffs','Big curls','Braided bun','Braided crown','Braided ponytail','Braided pigtails','Cornrows','Curly bob','Curly ponytail','Defined curls','Double buns','Flat twists','Half-up curls','Half-up ponytail','Headband curls','High bun','High puff','Layered curls','Loose braids','Loose curls','Low bun','Low ponytail','Mini afro','Natural curls','Natural fro','Neat bun','Pigtail braids','Pigtails','Pixie cut','Pulled-back curls','Short afro','Short bob','Short curls','Short fade cut','Short twists','Side braids','Side ponytail','Silk press bob','Soft afro puffs','Soft curls','Soft waves','Space buns','Straight bob','Straight ponytail','Twist-out','Twists','Two-strand twists','Wavy bob','Wavy ponytail','Wash-and-go curls']},
+      {key:'earrings', title:'Earrings', tag:'character', type:'single', custom:true, femaleOnly:true, options:[none,'Gold studs','Mini pearls','Tiny heart studs']},
+      {key:'hairGems', title:'Hair Gems', tag:'character', type:'single', custom:true, femaleOnly:true, options:[none,'Butterfly clips','Gem barrettes','Pearl clips']},
+      {key:'hairEdges', title:'Hair Edges', tag:'character', type:'single', custom:true, femaleOnly:true, options:[none,'Defined baby hairs','Natural soft edges','Polished swoop edges']},
+      {key:'boysOutfits', title:'Boys Outfits', tag:'character', type:'single', custom:true, maleOnly:true, options:[none,'Blue graduation gown','Race suit outfit','School-uniform glam look','Streetwear grad fit','Black graduation gown','White graduation gown','Navy graduation gown','Royal blue blazer set','Khaki pants and bow tie','Dress shirt and suspenders','Polo shirt and slacks','Vest and trousers set','Cardigan and dress pants','Blazer and jeans outfit','Tiny tuxedo-inspired set','Bow tie and shorts set','Sweater vest outfit','Denim jacket and khakis','All-white celebration outfit','Pastel party suit set','Little gentleman suit','School picture outfit','Birthday flyer suit look','Varsity jacket outfit','Color-pop blazer set','Sneaker suit outfit','Suspenders and rolled sleeves','Mini prom-style suit','Crisp button-up outfit','Smart casual celebration fit','Checkerboard race outfit','Trophy-day outfit','Class photo blazer look','Gold-trim ceremony set','Clean white shirt and trousers','Blue sweater and khakis','Tiny formal outfit','Celebration denim set','Neat cardigan set','Little scholar outfit','Modern school event fit','Party-ready suit look','Soft pastel shirt set','Cool kid dress outfit','Mini fashion-boy set','Pinstripe little suit','Red blazer celebration outfit','Champion-style sporty fit','School hallway fashion fit','Stage-ready graduation set']},
+      {key:'girlsOutfits', title:'Girls Outfits', tag:'character', type:'single', custom:true, femaleOnly:true, options:[none,'Pink graduation dress look','Pre-K white dress + cap','Sparkly grad outfit','Yellow graduation gown','Blue graduation gown','Lavender party dress','Rainbow tulle dress','Soft pink tutu dress','White celebration dress','Gold sparkle dress','Pastel birthday dress','Floral party dress','Pearl-trim dress look','School picture dress','Ballerina-inspired dress','Ruffle sleeve dress','Bow-front dress set','Fancy romper outfit','Puffy sleeve party dress','Tiny princess-style dress','Cardigan and skirt set','Pleated skirt outfit','Denim jacket and dress','Sequin party outfit','Little fashion-girl fit','Soft glam dress outfit','Candy-color dress look','Pastel ceremony outfit','Stage-ready sparkle dress','Graduation tutu outfit','Colorful celebration dress','White and gold party look','Pink bow dress set','Sweetheart party outfit','Little scholar dress look','Velvet party dress','Blue bow celebration dress','Confetti sparkle outfit','Cute cardigan dress set','Sunny yellow party dress','Dreamy pastel dress look','Playful glam outfit','Polka dot party dress','Soft peach dress set','Tiny star dress outfit','Tiered ruffle dress','School hallway glam look','Prize-day dress set','Photo-day sparkle outfit','Ceremony-ready party dress']},
+      {key:'boysShoes', title:'Boys Shoes', tag:'character', type:'single', custom:true, maleOnly:true, options:[none,'Chunky sneakers','Clean dress shoes','Race sneakers','White sneakers','Black dress shoes','Blue high-top sneakers','Slip-on sneakers','Velcro school shoes','Tiny loafers','Mini tuxedo shoes','Canvas sneakers','Sporty running shoes','Checkerboard sneakers','Red sneakers','Navy sneakers','Khaki casual shoes','Brown dress shoes','Cool skate shoes','Shiny ceremony shoes','Soft slip-ons','Color-pop sneakers','School uniform shoes','Low-top sneakers','Retro sneakers','Tiny lace-up shoes','Black-and-white sneakers','Blue-and-white sneakers','Gold-trim sneakers','Celebration high-tops','Photo-day dress shoes','White loafers','Mini oxford shoes','Comfy foam sneakers','Stage-ready shoes','Sporty high-tops','Little gentleman loafers','Bright red high-tops','Royal blue sneakers','Soft brown loafers','Tiny formal shoes','Streetwear sneakers','Smart casual shoes','Playground-clean sneakers','Fresh black sneakers','Neat white low-tops','Classy little dress shoes','Race-day slip-ons','Everyday school sneakers','Party-ready sneakers','Champion-style shoes']},
+      {key:'girlsShoes', title:'Girls Shoes', tag:'character', type:'single', custom:true, femaleOnly:true, options:[none,'Cute flats','Dressy kids shoes','Glossy sneakers','White sneakers','Pink ballet flats','Sparkly party shoes','Gold glitter flats','Mary jane shoes','Bow-detail flats','Rainbow sneakers','Pastel sneakers','Pearl-trim shoes','Soft pink sneakers','Blue party flats','Tiny loafers','Shiny ceremony shoes','Tulle dress shoes','Silver sparkle flats','Rosy dress shoes','Color-pop sneakers','Cute high-top sneakers','White ballet flats','Gold party shoes','Lavender flats','Heart-detail sneakers','Soft peach shoes','Photo-day dress shoes','Confetti sparkle shoes','School picture flats','Cute bow sneakers','Pearl white flats','Little princess flats','Mini formal shoes','Tiny slip-on sneakers','Blue glitter shoes','Soft gold flats','Star-detail sneakers','Dreamy pastel flats','Playful party sneakers','Comfy celebration shoes','Polka dot flats','Classic white dress shoes','Candy-color sneakers','Ribbon-detail shoes','Sweet party flats','Stage-ready sparkle flats','Pretty ceremony shoes','Soft glam sneakers','Adorable low-top sneakers','Tiny fashion-girl shoes']},
+      {key:'boysAccessories', title:'Boys Accessories', tag:'character', type:'multi', custom:true, maleOnly:true, options:[none,'Books prop','Checker flag','Foam number','Mini trophy','Race gloves','Backpack','Baseball cap','Bow tie','Certificate folder','Class badge','Cool sunglasses','Diploma roll','Gift ribbon pin','Graduation cap','Little watch','Mini medal','Notebook prop','Party badge','Pencil prop','Pocket square','School badge','School bow tie','Star pin','Suspenders','Tiny camera prop','Tiny crown pin','Tiny lapel pin','Toy car prop','Trophy ribbon','Celebration sash','Colorful tie','Mini pennant','Party wristband','Race helmet prop','School lanyard','Shiny badge','Star sunglasses','Storybook prop','Tiny briefcase prop','Victory ribbon','Award rosette','Cap tassel detail','Champ ribbon','Class star badge','Little champion sash','Photo prop glasses','Prize ribbon','School patch','Smarty-kid bow tie','Winner badge']},
+      {key:'girlsAccessories', title:'Girls Accessories', tag:'character', type:'multi', custom:true, femaleOnly:true, options:[none,'Crayon prop','Diploma roll','Foam year numbers','Mini stars','Pearl bracelet','Backpack','Balloon wand','Bow headband','Certificate folder','Class badge','Cute sunglasses','Flower headband','Gift ribbon pin','Graduation cap','Hair bow','Little charm bracelet','Little handbag prop','Mini medal','Notebook prop','Party badge','Pencil prop','Pearl necklace','Rainbow wand','Ribbon bow','School badge','School sash','Shiny star pin','Sparkle wand','Storybook prop','Tiny crown pin','Tiny purse prop','Trophy ribbon','Celebration sash','Confetti bow','Cute photo prop glasses','Floral clip','Glitter badge','Heart sunglasses','Little prize ribbon','Party wristband','Pearl hair bow','Pink bow pin','Pretty rosette','School lanyard','Shiny charm pin','Star pin','Sweet ribbon badge','Tiny keepsake bear','Winner badge','Yearbook badge']}
+    ];
+
+    const presets = [
+      {
+        name:'Candy Cap Star', gender:'Girl', outfit:'Pink graduation dress look', shoes:'Glossy sneakers',
+        accessories:['Diploma roll','Mini stars'], background:'Candy pink glow backdrop',
+        backgroundElements:['Confetti shower','Graduation caps','Spark trails'], products:['Diploma roll'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Chunky 3D bubble letters','Brush-script name'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Ultra-glossy kid promo art'], colorPalette:['Candy pink + turquoise'], lighting:['Bright commercial studio light'], pose:'Proud standing pose'
+      },
+      {
+        name:'Royal Blue Dream Grad', gender:'Girl', outfit:'Yellow graduation gown', shoes:'White sneakers',
+        accessories:['Pearl bracelet'], background:'Notebook paper wall',
+        backgroundElements:['Books stack','Paper airplanes','Glitter stars'], products:['Books'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Brush-script name','Rounded bold title'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Glossy ad-poster realism'], colorPalette:['Royal blue + gold'], lighting:['Glossy softbox lighting'], pose:'Both hands holding diploma'
+      },
+      {
+        name:'Crayon Queen Flyer', gender:'Girl', outfit:'Pre-K white dress + cap', shoes:'Cute flats',
+        accessories:['Crayon prop','Mini stars'], background:'Crayon sketch background',
+        backgroundElements:['Crayon box','Pencils','Sticker splashes'], products:['Crayon box'],
+        textOption:['Graduate name display','Pre-K / Kindergarten title'], fontStyle:['Chunky 3D bubble letters','Chalk doodle letters'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Bold kids-event flyer art'], colorPalette:['Crayon rainbow mix'], lighting:['High-key celebration light'], pose:'Standing with peace sign'
+      },
+      {
+        name:'Yellow Diploma Shine', gender:'Girl', outfit:'Yellow graduation gown', shoes:'Dressy kids shoes',
+        accessories:['Diploma roll'], background:'Confetti burst background',
+        backgroundElements:['Confetti shower','Gold tassels','Spark trails'], products:['Diploma roll'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Brush-script name','Glossy gel letters'],
+        mood:'Joyful school-milestone pride', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Glossy ad-poster realism'], colorPalette:['Gold + bubblegum pink'], lighting:['Hero spotlight with rim light'], pose:'Both hands holding diploma'
+      },
+      {
+        name:'Race Day Little Champ', gender:'Boy', outfit:'Race suit outfit', shoes:'Race sneakers',
+        accessories:['Checker flag','Race gloves'], background:'Color-block poster wall',
+        backgroundElements:['Checker flags','Racing tires','Lightning streaks'], products:['Race car prop'],
+        textOption:['Graduate name display','Special edition text'], fontStyle:['Bold athletic block text','Candy chrome letters'],
+        mood:'Bold and celebratory', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Commercial poster composite'], colorPalette:['Race blue + black + white'], lighting:['Crisp poster lighting'], pose:'One foot forward full-body pose'
+      },
+      {
+        name:'Foam Numbers Glam', gender:'Girl', outfit:'Sparkly grad outfit', shoes:'Glossy sneakers',
+        accessories:['Foam year numbers','Mini stars'], background:'Foam number backdrop',
+        backgroundElements:['Foam numerals','Glitter stars','Marquee sparkles'], products:['Foam number year'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Foam number typography','Brush-script name'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Playful premium poster art'], colorPalette:['Purple + sunshine yellow'], lighting:['Candy-color glow lighting'], pose:'Proud standing pose'
+      },
+      {
+        name:'Cloud Doodle Graduate', gender:'Girl', outfit:'Pink graduation dress look', shoes:'White sneakers',
+        accessories:['Mini stars'], background:'Cloud doodle backdrop',
+        backgroundElements:['Cloud doodles','Scribble hearts','Stars'], products:['ABC blocks'],
+        textOption:['Graduate name display','Tagline slogan'], fontStyle:['Balloon bubble title','Brush-script name'],
+        mood:'Dreamy and bright', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Sweet pastel promo art'], colorPalette:['Soft pastel rainbow'], lighting:['Soft glam studio light'], pose:'Hands clasped under chin'
+      },
+      {
+        name:'Spotlight Proud Boy', gender:'Boy', outfit:'Blue graduation gown', shoes:'Clean dress shoes',
+        accessories:['Mini trophy','Books prop'], background:'Graduation spotlight scene',
+        backgroundElements:['Graduation caps','Gold tassels','Shimmer dust'], products:['Books'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Bold athletic block text','Clean luxe sans-serif'],
+        mood:'Bold and celebratory', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Hyper-real graduation portrait'], colorPalette:['Blue + silver + white'], lighting:['Hero spotlight with rim light'], pose:'Proud standing pose'
+      },
+      {
+        name:'Rainbow Crayon Cutie', gender:'Girl', outfit:'Pre-K white dress + cap', shoes:'Cute flats',
+        accessories:['Crayon prop'], background:'Rainbow sketch wall',
+        backgroundElements:['Rainbow arcs','Crayon box','School icons'], products:['Crayon box'],
+        textOption:['Graduate name display','Pre-K / Kindergarten title'], fontStyle:['Comic pop letters','Brush-script name'],
+        mood:'Dreamy and bright', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Sticker-layered flyer art'], colorPalette:['Rainbow primary mix'], lighting:['Bright commercial studio light'], pose:'Standing with peace sign'
+      },
+      {
+        name:'Hot Pink Special Edition', gender:'Girl', outfit:'Sparkly grad outfit', shoes:'Glossy sneakers',
+        accessories:['Pearl bracelet','Mini stars'], background:'Hot pink radial burst',
+        backgroundElements:['Stars','Spark trails','Decorative stars'], products:['Trophy'],
+        textOption:['Graduate name display','Special edition text'], fontStyle:['Candy chrome letters','Brush-script name'],
+        mood:'High-energy flyer glam', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Youth event luxury flyer'], colorPalette:['Hot pink + lemon yellow'], lighting:['Neon edge lighting'], pose:'Proud standing pose'
+      },
+      {
+        name:'Blue Gold Ceremony Look', gender:'Boy', outfit:'Blue graduation gown', shoes:'White sneakers',
+        accessories:['Books prop'], background:'School photo area',
+        backgroundElements:['Gold tassels','Books stack','Shimmer dust'], products:['Diploma roll'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Rounded bold title','Clean luxe sans-serif'],
+        mood:'Bold and celebratory', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Studio composite flyer'], colorPalette:['Royal blue + gold'], lighting:['Luxury print lighting'], pose:'Both hands holding diploma'
+      },
+      {
+        name:'Sweet Studio Graduate', gender:'Girl', outfit:'Yellow graduation gown', shoes:'Dressy kids shoes',
+        accessories:['Diploma roll'], background:'Studio white sweep',
+        backgroundElements:['Glitter stars','Graduation caps'], products:['Certificate cover'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Brush-script name','Rounded bold title'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Centered poster composition',
+        artStyle:['Clean editorial flyer'], colorPalette:['Coral + cream + gold'], lighting:['Clean beauty lighting'], pose:'Proud standing pose'
+      },
+      {
+        name:'Bubble Letters Beauty', gender:'Girl', outfit:'Pink graduation dress look', shoes:'Glossy sneakers',
+        accessories:['Mini stars'], background:'Candy pink glow backdrop',
+        backgroundElements:['ABC letters','Bubbles','Sticker splashes'], products:['ABC blocks'],
+        textOption:['Graduate name display','Tagline slogan'], fontStyle:['Balloon bubble title','Chunky 3D bubble letters'],
+        mood:'Cute and premium', finish:'8K glossy finish', composition:'Typography-wrapped composition',
+        artStyle:['Cartoon-luxe portrait flyer'], colorPalette:['Candy pink + turquoise'], lighting:['Candy-color glow lighting'], pose:'Hands clasped under chin'
+      },
+      {
+        name:'Checker Flag Star', gender:'Boy', outfit:'Race suit outfit', shoes:'Race sneakers',
+        accessories:['Checker flag','Race gloves'], background:'Glossy studio gradient',
+        backgroundElements:['Checker flags','Lightning streaks','Spark trails'], products:['Race car prop'],
+        textOption:['Graduate name display','Look out statement'], fontStyle:['Bold athletic block text','Candy chrome letters'],
+        mood:'Bold and celebratory', finish:'8K glossy finish', composition:'Full-body hero flyer layout',
+        artStyle:['Commercial poster composite'], colorPalette:['Electric blue + cyan'], lighting:['Crisp poster lighting'], pose:'One foot forward full-body pose'
+      },
+      {
+        name:'Pastel Party Graduate', gender:'Girl', outfit:'Pre-K white dress + cap', shoes:'White sneakers',
+        accessories:['Mini stars'], background:'Pastel party backdrop',
+        backgroundElements:['Bubbles','Rainbow arcs','Scribble hearts'], products:['Mini backpack'],
+        textOption:['Graduate name display','Pre-K / Kindergarten title'], fontStyle:['Rounded bold title','Brush-script name'],
+        mood:'Dreamy and bright', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Soft toybox glam flyer'], colorPalette:['Mint + lilac + blush'], lighting:['Soft glam studio light'], pose:'Standing with peace sign'
+      },
+      {
+        name:'Book Stack Boss', gender:'Girl', outfit:'Yellow graduation gown', shoes:'Dressy kids shoes',
+        accessories:['Pearl bracelet'], background:'Flyer-ready blank studio',
+        backgroundElements:['Books stack','Glitter stars','Paper airplanes'], products:['Books'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Clean luxe sans-serif','Brush-script name'],
+        mood:'Joyful school-milestone pride', finish:'8K glossy finish', composition:'Magazine-cover flyer layout',
+        artStyle:['Magazine-cover flyer glam'], colorPalette:['Lavender + peach + cream'], lighting:['Bright commercial studio light'], pose:'Sitting on books'
+      },
+      {
+        name:'Mini Milestone Hero', gender:'Boy', outfit:'Streetwear grad fit', shoes:'Chunky sneakers',
+        accessories:['Foam number','Mini trophy'], background:'Toybox fantasy set',
+        backgroundElements:['Toy blocks','Stars','Graduation caps'], products:['Foam number year'],
+        textOption:['Graduate name display','Special edition text'], fontStyle:['Bold athletic block text','Comic pop letters'],
+        mood:'Confident and playful', finish:'8K glossy finish', composition:'Full-body hero flyer layout',
+        artStyle:['Vibrant celebratory realism'], colorPalette:['Aqua + yellow + pink'], lighting:['High-key celebration light'], pose:'Proud standing pose'
+      },
+      {
+        name:'Sticker Style Grad', gender:'Girl', outfit:'Sparkly grad outfit', shoes:'Glossy sneakers',
+        accessories:['Mini stars','Pearl bracelet'], background:'Sticker collage wall',
+        backgroundElements:['Sticker splashes','Holographic stickers','Scribble hearts'], products:['Notebook'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Sticker-style lettering','Brush-script name'],
+        mood:'High-energy flyer glam', finish:'8K glossy finish', composition:'Layered collage composition',
+        artStyle:['Sticker-layered flyer art'], colorPalette:['Neon pink + aqua'], lighting:['Candy-color glow lighting'], pose:'Standing with peace sign'
+      },
+      {
+        name:'Luxe Little Scholar', gender:'Girl', outfit:'Pink graduation dress look', shoes:'White sneakers',
+        accessories:['Pearl bracelet'], background:'Dream board collage',
+        backgroundElements:['Books stack','Shimmer dust','Glitter stars'], products:['Certificate cover'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Brush-script name','Clean luxe sans-serif'],
+        mood:'Cute and premium', finish:'Luxury printed-poster finish', composition:'Magazine-cover flyer layout',
+        artStyle:['Youth event luxury flyer'], colorPalette:['Black + gold + magenta'], lighting:['Luxury print lighting'], pose:'Proud standing pose'
+      },
+      {
+        name:'Shiny Stage Entrance', gender:'Boy', outfit:'Blue graduation gown', shoes:'Clean dress shoes',
+        accessories:['Mini trophy'], background:'Celebration stage',
+        backgroundElements:['Marquee sparkles','Gold tassels','Confetti shower'], products:['Trophy'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Bold athletic block text','Candy chrome letters'],
+        mood:'Bold and celebratory', finish:'Billboard-sharp finish', composition:'Centered poster composition',
+        artStyle:['Hyper-real graduation portrait'], colorPalette:['Blue + silver + white'], lighting:['Hero spotlight with rim light'], pose:'Proud standing pose'
+      },
+      {
+        name:'Gold Tassel Glow', gender:'Girl', outfit:'Yellow graduation gown', shoes:'Dressy kids shoes',
+        accessories:['Diploma roll','Mini stars'], background:'Confetti burst background',
+        backgroundElements:['Gold tassels','Confetti shower','Spark trails'], products:['Diploma roll'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Glossy gel letters','Brush-script name'],
+        mood:'Joyful school-milestone pride', finish:'8K glossy finish', composition:'Vertical event-poster framing',
+        artStyle:['Playful premium poster art'], colorPalette:['Gold + bubblegum pink'], lighting:['Front-lit flyer lighting'], pose:'Both hands holding diploma'
+      },
+      {
+        name:'Paper Plane Grad', gender:'Girl', outfit:'Pre-K white dress + cap', shoes:'White sneakers',
+        accessories:['Crayon prop'], background:'Notebook paper wall',
+        backgroundElements:['Paper airplanes','Cloud doodles','Pencils'], products:['Notebook'],
+        textOption:['Graduate name display','Pre-K / Kindergarten title'], fontStyle:['Handwritten classroom marker','Brush-script name'],
+        mood:'Dreamy and bright', finish:'Airbrushed premium finish', composition:'Layered collage composition',
+        artStyle:['Cute classroom collage flyer'], colorPalette:['Soft pastel rainbow'], lighting:['Bright commercial studio light'], pose:'Standing with peace sign'
+      },
+      {
+        name:'Bold School Flyer Kid', gender:'Boy', outfit:'School-uniform glam look', shoes:'White sneakers',
+        accessories:['Books prop'], background:'School hallway',
+        backgroundElements:['School icons','Books stack','Spark trails'], products:['Books'],
+        textOption:['Graduate name display','School name line'], fontStyle:['Bold athletic block text','Rounded bold title'],
+        mood:'Confident and playful', finish:'Ultra-polished flyer finish', composition:'Full-body hero flyer layout',
+        artStyle:['High-impact youth promo art'], colorPalette:['Teal + white + gold'], lighting:['Crisp poster lighting'], pose:'Proud standing pose'
+      },
+      {
+        name:'Starburst Grad Poster', gender:'Girl', outfit:'Sparkly grad outfit', shoes:'Glossy sneakers',
+        accessories:['Mini stars'], background:'Sunburst flyer backdrop',
+        backgroundElements:['Stars','Spark trails','Decorative stars'], products:['Trophy'],
+        textOption:['Graduate name display','Tagline slogan'], fontStyle:['Candy chrome letters','Brush-script name'],
+        mood:'High-energy flyer glam', finish:'8K glossy finish', composition:'Typography-wrapped composition',
+        artStyle:['Sparkle-heavy celebration art'], colorPalette:['Hot pink + lemon yellow'], lighting:['Neon edge lighting'], pose:'Hands clasped under chin'
+      },
+      {
+        name:'Diploma Day Deluxe', gender:'Girl', outfit:'Yellow graduation gown', shoes:'Dressy kids shoes',
+        accessories:['Diploma roll','Pearl bracelet'], background:'Glowing bokeh stage',
+        backgroundElements:['Glitter stars','Gold tassels','Confetti shower'], products:['Diploma roll'],
+        textOption:['Graduate name display','Class of year text'], fontStyle:['Brush-script name','Clean luxe sans-serif'],
+        mood:'Cute and premium', finish:'Luxury printed-poster finish', composition:'Centered poster composition',
+        artStyle:['Glossy ad-poster realism'], colorPalette:['Coral + cream + gold'], lighting:['Luxury print lighting'], pose:'Both hands holding diploma'
+      }
+    ];
+
+const genres = ['Afrobeats','Amapiano','Blues','Classical','Country','Dancehall','Drill','Electronic','Funk','Gospel','Highlife','Hip-Hop','House','Indie','Jazz','K-Pop','Latin','Lo-fi','Neo-Soul','Pop','R&B','Reggae','Rock','Soul','Synthwave','Trap'];
+    const styles = ['Beyoncé','Billie Eilish','Cardi B','Doja Cat','Erykah Badu','FKA Twigs','Frank Ocean','H.E.R.','Janelle Monáe','Megan Thee Stallion','Rihanna','SZA','Solange','The Weeknd','Tyla'];
+    const marketingKeys = ['Captions','Hashtags','SEO Keywords','Calls to Action','Email Promo Copy','Pinterest Promo Copy','TikTok Promo Copy','Facebook Promo Copy','Instagram Promo Copy','YouTube Promo Copy','Ad Copy'];
+
+    function fill40(base){
+      const set = Array.from(new Set(base));
+      const seed = [
+        'Abstract celebration layers','Academic sparkle details','Airy pastel accents','Animated paper textures','Balloon shine accents','Bright sticker layers','Celebration typography wrap','Clean cutout edges','Color splash accents','Decorative stars','Fun doodle overlays','Glam spark bursts','Graduation badge accents','Happy milestone graphics','High-shine poster polish','Kid-party confetti dust','Lively flyer layering','Paper texture overlays','Playful icon clusters','Poster-ready glow','Premium flyer richness','Printed-ink feel','School-themed stickers','Soft glam highlights','Theme-matched props','Vibrant party glow'
+      ];
+      seed.forEach(v=>set.push(v));
+      const first = set[0]===none? [none] : [];
+      const rest = (set[0]===none? set.slice(1):set).sort((a,b)=>a.localeCompare(b));
+      const arr = first.concat(rest).slice(0,40);
+      return arr;
+    }
+
+    function el(tag, attrs={}, children=[]) {
+      const node = document.createElement(tag);
+      Object.entries(attrs).forEach(([k,v])=>{
+        if(k==='class') node.className=v;
+        else if(k==='html') node.innerHTML=v;
+        else node.setAttribute(k,v);
+      });
+      (Array.isArray(children)?children:[children]).forEach(child=>{
+        if(child==null) return;
+        node.appendChild(typeof child==='string'?document.createTextNode(child):child);
+      });
+      return node;
+    }
+
+    function buildSections(){
+      const host=document.getElementById('sectionsHost');
+      categories.forEach(cat=>{
+        state.values[cat.key]=cat.type==='multi'? [] : none;
+        state.custom[cat.key]='';
+        state.locked[cat.key]=false;
+
+        const details=el('details',{class:'collapsible', open:'open'});
+        const summary=el('summary');
+        const left=el('div',{class:'summary-left'},[
+          el('span',{class:'pill'},cat.tag),
+          el('span',{class:'summary-title'},cat.title)
+        ]);
+        const tools=el('div',{class:'summary-tools'});
+        const lockBtn=el('button',{class:'icon-lock', type:'button', 'data-lock':cat.key},['Lock']);
+        tools.append(lockBtn);
+        summary.append(left,tools);
+        details.append(summary);
+
+        const body=el('div',{class:'section-body', id:`wrap-${cat.key}`});
+        body.append(el('div',{},[
+          el('label',{},[cat.type==='multi' ? 'Multi-select options' : 'Select one option'])
+        ]));
+
+        if(cat.type==='multi'){
+          const chipWrap=el('div',{class:'multi-wrap', id:`chips-${cat.key}`});
+          cat.options.forEach(opt=>{
+            const chip=el('button',{class:'chip', type:'button', 'data-cat':cat.key, 'data-value':opt},[opt]);
+            chipWrap.append(chip);
+          });
+          body.append(chipWrap);
+        } else {
+          const select=el('select',{id:`sel-${cat.key}`});
+          cat.options.forEach(opt=>select.append(el('option',{value:opt},[opt])));
+          body.append(select);
+        }
+
+        if(cat.custom){
+          body.append(el('div',{},[
+            el('label',{},['Custom text']),
+            el('input',{type:'text', id:`custom-${cat.key}`, placeholder:`Add your own ${cat.title.toLowerCase()}...`})
+          ]));
+        }
+        body.append(el('div',{class:'mini-note'},['Locked categories stay untouched during Random and 3 More Variations.']))
+        details.append(body);
+        host.append(details);
+      });
+      bindSectionEvents();
+    }
+
+    function bindSectionEvents(){
+      categories.forEach(cat=>{
+        const lock=document.querySelector(`[data-lock="${cat.key}"]`);
+        lock.addEventListener('click',(e)=>{
+          e.preventDefault();
+          state.locked[cat.key]=!state.locked[cat.key];
+          lock.classList.toggle('locked', state.locked[cat.key]);
+          lock.textContent=state.locked[cat.key]?'Locked':'Lock';
+        });
+
+        if(cat.type==='multi'){
+          document.querySelectorAll(`#chips-${cat.key} .chip`).forEach(chip=>{
+            chip.addEventListener('click',()=>{
+              toggleMulti(cat.key, chip.dataset.value, chip);
+            });
+          });
+        } else {
+          const sel=document.getElementById(`sel-${cat.key}`);
+          sel.addEventListener('change',()=>{
+            state.values[cat.key]=sel.value;
+            if(cat.key==='gender'){
+              applyGenderRules();
+              applyHardGenderOptionLock();
+            }
+          });
+        }
+
+        const custom=document.getElementById(`custom-${cat.key}`);
+        if(custom) custom.addEventListener('input',()=>state.custom[cat.key]=custom.value.trim());
+      });
+    }
+
+    function toggleMulti(key, value, chip){
+      let arr=Array.isArray(state.values[key]) ? [...state.values[key]] : [];
+      if(value===none){
+        arr=[none];
+      } else {
+        arr=arr.filter(v=>v!==none);
+        if(arr.includes(value)) arr=arr.filter(v=>v!==value); else arr.push(value);
+        if(!arr.length) arr=[none];
+      }
+      state.values[key]=arr;
+      document.querySelectorAll(`#chips-${key} .chip`).forEach(c=>c.classList.toggle('active', arr.includes(c.dataset.value)));
+    }
+
+    function applyGenderRules(){
+      const gender = getValue('gender');
+      categories.forEach(cat=>{
+        const wrap=document.getElementById(`wrap-${cat.key}`)?.parentElement;
+        if(!wrap) return;
+        const shouldHide = (gender==='Boy' && cat.femaleOnly) || (gender==='Girl' && cat.maleOnly);
+        wrap.classList.toggle('hidden', !!shouldHide);
+        if(shouldHide){
+          state.values[cat.key]=cat.type==='multi' ? [none] : none;
+          state.custom[cat.key]='';
+          const sel=document.getElementById(`sel-${cat.key}`); if(sel) sel.value=none;
+          const inp=document.getElementById(`custom-${cat.key}`); if(inp) inp.value='';
+          document.querySelectorAll(`#chips-${cat.key} .chip`).forEach(ch=>ch.classList.remove('active'));
+          const noneChip = document.querySelector(`#chips-${cat.key} .chip[data-value="${CSS.escape(none)}"]`); if(noneChip) noneChip.classList.add('active');
+        }
+      });
+      // extra male clean-up
+      if(gender==='Boy'){
+        ['lashes','makeup','nails','hairGems','hairEdges','girlsOutfits','girlsShoes','girlsAccessories','earrings'].forEach(k=>{
+          if(state.values[k]!==undefined){
+            state.values[k]=Array.isArray(state.values[k])?[none]:none;
+            const sel=document.getElementById(`sel-${k}`); if(sel) sel.value=none;
+            document.querySelectorAll(`#chips-${k} .chip`).forEach(ch=>ch.classList.toggle('active', ch.dataset.value===none));
+          }
+        });
+      }
+      applyHardGenderOptionLock();
+    }
+
+    function getValue(key){
+      const val=state.values[key];
+      if(Array.isArray(val)) return val.filter(v=>v && v!==none).join(', ');
+      return val===none ? '' : (val || '');
+    }
+    function getCustomOrValue(key){
+      return state.custom[key] || getValue(key);
+    }
+
+    function getGenderFilteredValue(key){
+      const gender = getCustomOrValue('gender');
+      let val = getCustomOrValue(key);
+      if(!val) return val;
+
+      const blockedBoyPaletteTerms = ['pink','blush','bubblegum','fuchsia','lavender','lilac','peach','rose gold','cotton candy','violet','magenta'];
+      const blockedBoyAccessoryTerms = ['pearl','star pin','sparkle','wand','bow','bracelet','handbag','purse','flower','glitter','rosette','heart sunglasses','necklace','confetti bow'];
+
+      if(gender === 'Boy' && key === 'colorPalette'){
+        const parts = val.split(',').map(v => v.trim()).filter(Boolean);
+        return parts.filter(part => !blockedBoyPaletteTerms.some(term => part.toLowerCase().includes(term))).join(', ');
+      }
+
+      if(gender === 'Boy' && key === 'boysAccessories'){
+        const parts = val.split(',').map(v => v.trim()).filter(Boolean);
+        return parts.filter(part => !blockedBoyAccessoryTerms.some(term => part.toLowerCase().includes(term))).join(', ');
+      }
+
+      const blockedBoyOrnateTerms = ['pearl','bow','heart','glitter','gem','jewel','ribbon sparkle','pretty','party glam','tiny foil hearts'];
+      if(gender === 'Boy' && key === 'ornateElements'){
+        const parts = val.split(',').map(v => v.trim()).filter(Boolean);
+        return parts.filter(part => !blockedBoyOrnateTerms.some(term => part.toLowerCase().includes(term))).join(', ');
+      }
+
+      const blockedBoyProductTerms = ['star wand','gift bag','gift box','cute lunchbox','smiley face','toy apple','balloon bouquet'];
+      if(gender === 'Boy' && key === 'products'){
+        const parts = val.split(',').map(v => v.trim()).filter(Boolean);
+        return parts.filter(part => !blockedBoyProductTerms.some(term => part.toLowerCase().includes(term))).join(', ');
+      }
+
+      return val;
+    }
+
+    function applyHardGenderOptionLock(){
+      const gender = getCustomOrValue('gender');
+      const blockedBoyPaletteTerms = ['pink','blush','bubblegum','fuchsia','lavender','lilac','peach','rose gold','cotton candy','violet','magenta'];
+      const blockedBoyOrnateTerms = ['pearl','bow','heart','glitter','gem','jewel','ribbon sparkle','pretty','party glam','tiny foil hearts'];
+      const blockedBoyProductTerms = ['star wand','gift bag','gift box','cute lunchbox','smiley face','toy apple','balloon bouquet'];
+
+      const paletteChips = document.querySelectorAll('#chips-colorPalette .chip');
+      const ornateChips = document.querySelectorAll('#chips-ornateElements .chip');
+      const productChips = document.querySelectorAll('#chips-products .chip');
+
+      paletteChips.forEach(chip => {
+        if(chip.dataset.value === none) return;
+        const shouldHide = gender === 'Boy' && blockedBoyPaletteTerms.some(term => chip.dataset.value.toLowerCase().includes(term));
+        chip.classList.toggle('hidden', shouldHide);
+        if(shouldHide){
+          state.values.colorPalette = (state.values.colorPalette || []).filter(v => v !== chip.dataset.value);
+          chip.classList.remove('active');
+        }
+      });
+
+      ornateChips.forEach(chip => {
+        if(chip.dataset.value === none) return;
+        const shouldHide = gender === 'Boy' && blockedBoyOrnateTerms.some(term => chip.dataset.value.toLowerCase().includes(term));
+        chip.classList.toggle('hidden', shouldHide);
+        if(shouldHide){
+          state.values.ornateElements = (state.values.ornateElements || []).filter(v => v !== chip.dataset.value);
+          chip.classList.remove('active');
+        }
+      });
+
+      productChips.forEach(chip => {
+        if(chip.dataset.value === none) return;
+        const shouldHide = gender === 'Boy' && blockedBoyProductTerms.some(term => chip.dataset.value.toLowerCase().includes(term));
+        chip.classList.toggle('hidden', shouldHide);
+        if(shouldHide){
+          state.values.products = (state.values.products || []).filter(v => v !== chip.dataset.value);
+          chip.classList.remove('active');
+        }
+      });
+
+      if(gender !== 'Boy'){
+        paletteChips.forEach(chip => chip.classList.remove('hidden'));
+        ornateChips.forEach(chip => chip.classList.remove('hidden'));
+        productChips.forEach(chip => chip.classList.remove('hidden'));
+      }
+
+      if(gender === 'Boy'){
+        if(Array.isArray(state.values.colorPalette) && state.values.colorPalette.length === 0){
+          state.values.colorPalette = [none];
+          const noneChip = document.querySelector('#chips-colorPalette .chip[data-value="None"]');
+          if(noneChip) noneChip.classList.add('active');
+        }
+        if(Array.isArray(state.values.ornateElements) && state.values.ornateElements.length === 0){
+          state.values.ornateElements = [none];
+          const noneChip = document.querySelector('#chips-ornateElements .chip[data-value="None"]');
+          if(noneChip) noneChip.classList.add('active');
+        }
+        if(Array.isArray(state.values.products) && state.values.products.length === 0){
+          state.values.products = [none];
+          const noneChip = document.querySelector('#chips-products .chip[data-value="None"]');
+          if(noneChip) noneChip.classList.add('active');
+        }
+      }
+    }
+
+    function buildPrompt(){
+      const ratio = getCustomOrValue('aspectRatio');
+      const gender = getCustomOrValue('gender') || 'child';
+      const outfit = getCustomOrValue(gender==='Boy'?'boysOutfits':'girlsOutfits') || getCustomOrValue('girlsOutfits') || getCustomOrValue('boysOutfits');
+      const shoes = getCustomOrValue(gender==='Boy'?'boysShoes':'girlsShoes') || getCustomOrValue('girlsShoes') || getCustomOrValue('boysShoes');
+      const acc = gender==='Boy'
+        ? (getGenderFilteredValue('boysAccessories') || '')
+        : (getCustomOrValue('girlsAccessories') || getCustomOrValue('boysAccessories'));
+      const text = [getCustomOrValue('textOption'), getCustomOrValue('fontStyle')].filter(Boolean).join(', ');
+
+      const parts = [
+        'Create a premium AI-generated graduation flyer image inspired by glossy kid graduation promo artwork with playful school-celebration design language.',
+        'The image should match a hyper-realistic, polished, flyer-ready composite aesthetic with rich color, poster-grade sharpness, smooth commercial retouching, glossy highlights, premium 8K detail, and a vibrant celebratory mood.',
+        `Show a full-body ${(gender || 'child').toLowerCase()} graduate head to toe with feet fully visible, complete visible anatomy, no crop below the knees, full-body composition by default, uniquely distinct face, uniquely distinct pose, and individually styled features.`,
+        ...(state.usePhotoReference ? [`Use the uploaded photo as the facial and identity reference for the child. Preserve the same face, skin tone, age appearance, and overall child likeness.`] : [])
+      ];
+      const map = {
+        ethnicity:'ethnicity', skinTone:'skin tone', eyeColor:'eye color', hairColor:'hair color', hairstyle:'hairstyle', eyebrows:'eyebrows', lashes:'lashes', makeup:'makeup', nails:'nails', earrings:'earrings', hairGems:'hair gems', hairEdges:'hair edges', facialExpression:'facial expression', facialFeatures:'facial features', pose:'pose', artStyle:'art style', composition:'composition', finish:'finish', mood:'mood', background:'background', backgroundElements:'background elements', location:'location', lighting:'lighting', shadow:'shadow', cameraAngle:'camera angle', colorPalette:'color palette', effects:'effects', ornateElements:'ornate elements', products:'product props', eventDate:'event date', eventTime:'event time', eventVenue:'event venue', eventAddress:'event address', eventRSVP:'rsvp details', graduationYear:'graduation year'
+      };
+      Object.entries(map).forEach(([key,label])=>{
+        if(state.usePhotoReference && key==='ethnicity') return;
+        const filteredKeys = ['colorPalette','ornateElements','products'];
+        const v = filteredKeys.includes(key) ? getGenderFilteredValue(key) : getCustomOrValue(key);
+        if(v) parts.push(`${label}: ${v}.`);
+      });
+      if(outfit) parts.push(`Wardrobe: ${outfit}.`);
+      if(shoes) parts.push(`Shoes: ${shoes}.`);
+      if(acc) parts.push(`Accessories and props: ${acc}.`);
+      const gradYear = getCustomOrValue('graduationYear');
+      if(gradYear) parts.push(`Class year for flyer text: Class of ${gradYear}.`);
+      if(text) parts.push(`Typography treatment inside the flyer design: ${text}.`);
+      parts.push('Use bright commercial lighting, grounded shadows, layered decorative flyer graphics, playful celebration icons, school-themed design accents, polished print-flyer composition, and premium visual structure suitable for kindergarten, pre-K, and child graduation announcements.');
+      if(state.usePhotoReference){
+        parts.push(`Use the uploaded photo as the facial and identity reference for the child. Preserve the same face, skin tone, age appearance, and overall child likeness.`);
+      }
+      if(ratio) parts.push(`Aspect ratio: ${ratio}.`);
+      parts.push('Avoid messy clutter, avoid low detail, avoid cropped feet, avoid knee-up framing unless manually requested, and keep the final render cohesive, vibrant, and luxury-flyer ready.');
+      return parts.join(' ');
+    }
+
+    function buildVideoScript(){
+      const charDesc = [getCustomOrValue('gender') || 'graduate', getCustomOrValue('hairstyle'), getCustomOrValue('girlsOutfits') || getCustomOrValue('boysOutfits')].filter(Boolean).join(' ');
+      const mood = getCustomOrValue('mood') || 'joyful';
+      return `Animation: The ${charDesc} steps forward in full-body view, tassel sways, confetti drifts across the flyer, background doodles pulse softly, and the graduate lifts the diploma with a proud smile as the title text glows into place. Camera stays poster-clean with glossy motion accents and a quick sparkle finish.
+Voiceover: “Big dreams, bright smile, graduation day—look at this little star shine!”`;
+    }
+
+    function pickRandomFrom(cat, exclude=[]){
+      const opts=cat.options.filter(v=>v!==none && !exclude.includes(v));
+      return opts[Math.floor(Math.random()*opts.length)] || none;
+    }
+
+    function randomize(){
+      const genderLocked = state.locked.gender ? getCustomOrValue('gender') : (Math.random()>.28 ? 'Girl' : 'Boy');
+      if(!state.locked.gender){
+        state.values.gender=genderLocked;
+        document.getElementById('sel-gender').value=genderLocked;
+      }
+      applyGenderRules();
+      applyHardGenderOptionLock();
+
+      categories.forEach(cat=>{
+        if(state.locked[cat.key]) return;
+        const hiddenWrap=document.getElementById(`wrap-${cat.key}`)?.parentElement;
+        if(hiddenWrap?.classList.contains('hidden')) return;
+        if(cat.key==='gender') return;
+        if(cat.type==='multi'){
+          const opts=cat.options.filter(v=>v!==none);
+          const count = Math.random()>.6 ? 2 : 1;
+          const chosen=[];
+          while(chosen.length<count && opts.length){
+            const v = opts[Math.floor(Math.random()*opts.length)];
+            if(!chosen.includes(v)) chosen.push(v);
+          }
+          state.values[cat.key]=chosen.length?chosen:[none];
+          document.querySelectorAll(`#chips-${cat.key} .chip`).forEach(ch=>ch.classList.toggle('active', state.values[cat.key].includes(ch.dataset.value)));
+        } else {
+          const value=pickRandomFrom(cat);
+          state.values[cat.key]=value;
+          const sel=document.getElementById(`sel-${cat.key}`); if(sel) sel.value=value;
+        }
+        state.custom[cat.key]='';
+        const input=document.getElementById(`custom-${cat.key}`); if(input) input.value='';
+      });
+
+      // sensible pairings
+      const gender=getCustomOrValue('gender');
+      if(gender==='Boy'){
+        state.values.boysOutfits = Math.random()>.5 ? 'Race suit outfit' : 'Blue graduation gown';
+        state.values.backgroundElements = ['Checker flags','Foam numerals'];
+        if(document.getElementById('sel-boysOutfits')) document.getElementById('sel-boysOutfits').value=state.values.boysOutfits;
+        syncMulti('backgroundElements');
+      } else {
+        state.values.girlsOutfits = ['Pink graduation dress look','Pre-K white dress + cap','Sparkly grad outfit','Yellow graduation gown'][Math.floor(Math.random()*4)];
+        if(document.getElementById('sel-girlsOutfits')) document.getElementById('sel-girlsOutfits').value=state.values.girlsOutfits;
+      }
+      generateAll();
+    }
+
+    function syncMulti(key){
+      document.querySelectorAll(`#chips-${key} .chip`).forEach(ch=>ch.classList.toggle('active', state.values[key].includes(ch.dataset.value)));
+    }
+
+    function clearAll(){
+      categories.forEach(cat=>{
+        state.values[cat.key]=cat.type==='multi'?[none]:none;
+        state.custom[cat.key]='';
+        const sel=document.getElementById(`sel-${cat.key}`); if(sel) sel.value=none;
+        const input=document.getElementById(`custom-${cat.key}`); if(input) input.value='';
+        document.querySelectorAll(`#chips-${cat.key} .chip`).forEach(ch=>ch.classList.toggle('active', ch.dataset.value===none));
+      });
+      applyGenderRules();
+      applyHardGenderOptionLock();
+      state.usePhotoReference=false;
+      state.uploadedPhotoName='';
+      const refToggle=document.getElementById('photoReferenceToggle');
+      const refCheckbox=document.getElementById('usePhotoReference');
+      const refStatus=document.getElementById('photoReferenceStatus');
+      if(refToggle) refToggle.classList.remove('active');
+      if(refCheckbox) refCheckbox.checked=false;
+      if(refStatus) refStatus.textContent='Off';
+      const ethnicityWrap=document.getElementById('wrap-ethnicity')?.parentElement;
+      const ethnicityLockBtn=document.querySelector('[data-lock="ethnicity"]');
+      if(ethnicityWrap) ethnicityWrap.classList.remove('disabled-section');
+      if(ethnicityLockBtn){
+        state.locked.ethnicity=false;
+        ethnicityLockBtn.classList.remove('locked');
+        ethnicityLockBtn.textContent='Lock';
+      }
+      document.getElementById('mainOutput').textContent='';
+      document.getElementById('videoOutput').textContent='';
+      document.getElementById('variationsOutput').innerHTML='';
+      document.getElementById('variationsOutputText').textContent='';
+    }
+
+    function generateAll(){
+      const prompt=buildPrompt();
+      state.currentPrompt=prompt;
+      document.getElementById('mainOutput').textContent=prompt;
+      document.getElementById('videoOutput').textContent=buildVideoScript();
+      buildGPTOutputs();
+      generateMusicOutputs();
+      generateMarketing();
+    }
+
+    function savePrompt(){
+      if(!state.currentPrompt) generateAll();
+      state.history.unshift(state.currentPrompt);
+      state.history=state.history.slice(0,30);
+      renderHistory();
+    }
+
+    function renderHistory(){
+      const host=document.getElementById('historyOutput');
+      host.innerHTML='';
+      state.history.forEach(item=>host.append(el('div',{class:'history-item'},[item])));
+      if(!state.history.length) host.textContent='No saved prompts yet.';
+    }
+
+    function applyPreset(preset){
+      const setSelectSafe = (key, val) => {
+        if(!val) return;
+        const sel = document.getElementById(`sel-${key}`);
+        if(!sel) return;
+        const hasOption = [...sel.options].some(o => o.value === val);
+        const finalVal = hasOption ? val : none;
+        state.values[key] = finalVal;
+        sel.value = finalVal;
+      };
+
+      const setMultiSafe = (key, values) => {
+        const cat = categories.find(c => c.key === key);
+        if(!cat) return;
+        const valid = (values || []).filter(v => cat.options.includes(v) && v !== none);
+        state.values[key] = valid.length ? valid : [none];
+        syncMulti(key);
+      };
+
+      categories.forEach(cat => {
+        state.custom[cat.key] = '';
+        const input = document.getElementById(`custom-${cat.key}`);
+        if(input) input.value = '';
+      });
+
+      setSelectSafe('gender', preset.gender);
+      applyGenderRules();
+
+      setSelectSafe(preset.gender === 'Boy' ? 'boysOutfits' : 'girlsOutfits', preset.outfit);
+      setSelectSafe(preset.gender === 'Boy' ? 'boysShoes' : 'girlsShoes', preset.shoes);
+      setMultiSafe(preset.gender === 'Boy' ? 'boysAccessories' : 'girlsAccessories', preset.accessories);
+
+      setSelectSafe('background', preset.background);
+      setMultiSafe('backgroundElements', preset.backgroundElements);
+      setMultiSafe('products', preset.products);
+      setMultiSafe('textOption', preset.textOption);
+      setMultiSafe('fontStyle', preset.fontStyle);
+      setMultiSafe('artStyle', preset.artStyle);
+      setMultiSafe('colorPalette', preset.colorPalette);
+      setMultiSafe('lighting', preset.lighting);
+      setSelectSafe('mood', preset.mood);
+      setSelectSafe('finish', preset.finish);
+      setSelectSafe('composition', preset.composition);
+      setSelectSafe('pose', preset.pose);
+
+      const hiddenWraps = ['girlsOutfits','girlsShoes','girlsAccessories','boysOutfits','boysShoes','boysAccessories'];
+      hiddenWraps.forEach(key => {
+        const wrap = document.getElementById(`wrap-${key}`)?.parentElement;
+        if(wrap && !wrap.classList.contains('hidden')) {
+          wrap.open = true;
+        }
+      });
+
+      generateAll();
+    }
+
+    function toggleSingleText(key,val){ if(document.getElementById(`sel-${key}`)){ state.values[key]=val; document.getElementById(`sel-${key}`).value=val; } }
+    function setMultiSimple(key, arr){ state.values[key]=arr; syncMulti(key); }
+
+    function buildPresetButtons(){
+      const host=document.getElementById('presetGrid');
+      presets.forEach(p=>{
+        const btn=el('button',{class:'preset-btn', type:'button'},[p.name]);
+        btn.addEventListener('click',()=>{
+          host.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          applyPreset(p);
+        });
+        host.append(btn);
+      });
+    }
+
+    function buildChips(id, items, selectedSet){
+      const host=document.getElementById(id);
+      items.forEach(item=>{
+        const chip=el('button',{class:'chip'+(selectedSet.has(item)?' active':''), type:'button'},[item]);
+        chip.addEventListener('click',()=>{
+          if(selectedSet.has(item)) selectedSet.delete(item); else selectedSet.add(item);
+          chip.classList.toggle('active', selectedSet.has(item));
+        });
+        host.append(chip);
+      });
+    }
+
+    function sliderBindings(){
+      [['weirdness','weirdnessVal'],['styleInfluence','styleInfluenceVal'],['audioInfluence','audioInfluenceVal']].forEach(([id,out])=>{
+        const el=document.getElementById(id), view=document.getElementById(out);
+        el.addEventListener('input',()=>view.textContent=el.value+'%');
+      });
+    }
+
+    function generateMusicOutputs(){
+      const theme = `${getCustomOrValue('mood')||'joyful'} ${getCustomOrValue('artStyle')||'glossy graduation flyer'} ${getCustomOrValue('colorPalette')||'bright color palette'}`;
+      const genresTxt = [...state.selectedGenres].join(', ') || 'Pop';
+      const stylesTxt = [...state.selectedStyles].join(', ') || 'SZA';
+      const vocalTxt = [...state.selectedVocal].join(', ') || 'Vocal';
+      document.getElementById('jingleOutput').textContent = `Title: Little Star Graduate\nVibe: ${theme}\nDirection: ${vocalTxt}; short hook with upbeat bounce, handclap energy, bright celebration lift.\nLyrics: “Cap on, smile bright, little star in the light / Step up, shine big, this your proud day tonight / Books stacked, dreams packed, let the whole room say hey / Little grad glowing, make the world clap today!”`;
+      document.getElementById('song30Output').textContent = `Title: Big Day Energy\nGenres: ${genresTxt}\nInfluences: ${stylesTxt}\nDirection: ${vocalTxt}; glossy youth-celebration anthem with sweet chant hook, clean drums, bright synths, and school-day sparkle.\nLyrics: “Walk in with the tassel swinging, confidence all in the frame / Tiny shoes, big dreams, everybody call my name / From crayons to crowns, now the whole room lights up / This little graduate shining, and we’re all showing love.\nHands high, smile wide, let the confetti fall / Big day energy, little star giving all.”`;
+      document.getElementById('song60Output').textContent = `Title: Graduation Glow\nGenres: ${genresTxt}\nInfluences: ${stylesTxt}\nDirection: ${vocalTxt}; emotional but fun celebration track with glossy ad-ready production, child-safe joyful tone, and triumphant finale.\nLyrics: “Look at the smile, look at the pride, full of dreams and standing tall / Tiny cap, bright future, hear the happy people call / Classroom colors, shining lights, every little step was gold / Now the graduate takes the stage, brave and bright and bold.\nTurn the page, lift the name, let the whole world see the glow / From little hands to bigger plans, this is how the stars will grow / Wave the diploma, hold it high, let the moment float above / Graduation glow forever, wrapped in joy and wrapped in love.”`;
+      document.getElementById('sunoSettingsOutput').textContent = `Genres: ${genresTxt}\nStyle influences: ${stylesTxt}\nVocal type: ${vocalTxt}\nWeirdness: ${document.getElementById('weirdness').value}%\nStyle influence: ${document.getElementById('styleInfluence').value}%\nAudio influence: ${document.getElementById('audioInfluence').value}%\nUse glossy kid-celebration production, bright melodic topline, clean drums, big hook, and flyer-matching sparkle energy.`;
+    }
+
+    function generateMarketing(){
+      const theme = getCustomOrValue('artStyle') || 'glossy graduation flyer';
+      const mood = getCustomOrValue('mood') || 'cute premium milestone energy';
+      const name = 'your graduate';
+      const gradYear = getCustomOrValue('graduationYear') || '[Graduation Year]';
+      const classTag = gradYear && gradYear !== '[Graduation Year]' ? `#ClassOf${gradYear}` : '#ClassOfYourYear';
+      const host=document.getElementById('marketingOutputs');
+      host.innerHTML='';
+      const data={
+        'Captions':`Tiny cap. Big energy. ${name} just turned a milestone moment into a full-on star moment with this ${theme} look. ${mood}.`,
+        'Hashtags':`#KindergartenGrad #PreKGrad #GraduationFlyer #KidsGraduation #GraduationPhotos #CustomFlyer #GraduationDesign #LittleGraduate ${classTag} #SchoolCelebration`,
+        'SEO Keywords':'kindergarten graduation flyer, pre-k graduation flyer, kids graduation poster, custom child graduation design, glossy graduation flyer template, little grad announcement',
+        'Calls to Action':'Order your custom graduation flyer today. Make your child’s big moment look bold, bright, and unforgettable.',
+        'Email Promo Copy':'Subject: Your little graduate deserves a flyer that pops\nBody: Celebrate the milestone with a custom glossy graduation flyer built to stop the scroll and turn heads. Perfect for social posts, invites, keepsakes, and family sharing.',
+        'Pinterest Promo Copy':'Save this glossy little grad flyer idea for graduation season. Bright colors, custom names, flyer-style glam, and a proud milestone look all in one design.',
+        'TikTok Promo Copy':'POV: your little graduate’s flyer looks better than half the adults on the timeline. Bright, custom, glossy, and made to stop the scroll.',
+        'Facebook Promo Copy':'Graduation season is here, and these custom little grad flyers are bringing all the color, pride, and personality. Perfect for proud family posts and announcement graphics.',
+        'Instagram Promo Copy':'Tiny cap. Big milestone. Bold custom flyer energy. This is how you make graduation memories look premium on the feed.',
+        'YouTube Promo Copy':'Watch this little grad flyer concept come together with bright school colors, glossy flyer styling, full-body character focus, and celebration details that pop.',
+        'Ad Copy':'Make graduation day impossible to ignore with a custom little grad flyer designed for bright color, premium polish, and proud family sharing.'
+      };
+      marketingKeys.forEach(key=>{
+        const card=el('div',{class:'out-card'});
+        card.append(el('div',{class:'out-head'},[el('strong',{},[key]), el('button',{class:'copy-btn', type:'button', 'data-copy-text':data[key]},['Copy'])]));
+        card.append(el('div',{class:'output'},[data[key]]));
+        host.append(card);
+      });
+      host.querySelectorAll('[data-copy-text]').forEach(btn=>btn.addEventListener('click',()=>copyText(btn.dataset.copyText)));
+    }
+
+    function buildGPTOutputs(){
+      document.getElementById('gptInstructionsOutput').textContent = `You are a premium Little Grad Flyer Generator assistant. Your job is to create polished AI image prompts for glossy child graduation flyer visuals based on structured category selections. Use categories including aspect ratio, art style, background, background elements, camera angle, color palette, effects, facial expression, facial features, fog, font style, lighting, location, ornate elements, products, season, shadow, text option, time of day, weather, composition, finish, mood, pose, and character controls when relevant. Always keep the output hyper-realistic, glossy, premium, cinematic, flyer-ready, and 8K-quality. When a child character is included, default to full-body framing, head-to-toe visibility, no cropped feet, no crop below the knees, and complete visible anatomy. Respect gender-lock logic so boy and girl styling never cross. Use custom text field values whenever provided. Assemble prompts into one polished output that reflects the selected visual language, design finish, mood, camera feel, text treatment, props, and flyer composition.`;
+      document.getElementById('starterQuestionsOutput').textContent = `Create a glossy kindergarten graduation flyer prompt with a full-body child, bubble lettering, and confetti glam.\nBuild a pre-K flyer prompt with crayons, pink and yellow colors, and a playful premium poster look.\nMake a race-themed boy graduation flyer with checker flags, books, and full-body framing.\nGenerate three flyer prompt variations that keep the same child identity but change styling, lighting, and scene direction.`;
+      document.getElementById('knowledgeOutput').textContent = `Generator purpose: build reference-style AI prompts for premium kid graduation flyer images.\nVisual language: bright celebratory school graphics, glossy composites, flyer typography, confetti, props, and poster-style design structure.\nCore rules: hyper-realistic, polished, 8K-ready, commercial-grade finish, full-body default for characters, grounded shadows, strong lighting, clean composition, premium flyer-ready aesthetic.\nSelection logic: dropdown or chip values combine with custom text overrides; locked categories stay fixed during randomization; presets supply polished combinations; three variations keep identity while changing styling and scene choices.\nUse case: custom graduation flyers, social promos, event announcements, keepsake designs, print-ready concept prompts, and celebratory child milestone visuals.`;
+    }
+
+    function makeVariations(){
+      if(!state.currentPrompt) generateAll();
+      const identity = {
+        gender:getCustomOrValue('gender'),
+        ethnicity:getCustomOrValue('ethnicity'),
+        skinTone:getCustomOrValue('skinTone')
+      };
+      const hairs=['Big curls','Braided pigtails','Defined curls','High puff','Loose curls','Neat bun','Twists'];
+            const arts=['3D character poster','Bold kids-event flyer art','Glossy ad-poster realism','Sticker-layered flyer art','Ultra-glossy kid promo art'];
+      const outfits = identity.gender==='Boy' ? ['Blue graduation gown','Race suit outfit','School-uniform glam look','Streetwear grad fit'] : ['Pink graduation dress look','Pre-K white dress + cap','Sparkly grad outfit','Yellow graduation gown'];
+      const shoes = identity.gender==='Boy' ? ['Chunky sneakers','Race sneakers','White sneakers'] : ['Cute flats','Glossy sneakers','White sneakers'];
+      const accessories = identity.gender==='Boy' ? ['Checker flag','Foam number','Mini trophy'] : ['Crayon prop','Diploma roll','Foam year numbers'];
+      const poses=['Both hands holding diploma','Hands clasped under chin','Proud standing pose','Standing with peace sign','Sitting on books'];
+      const cameras=['Centered eye-level hero shot','Dynamic low-angle flyer shot','Front-facing poster shot','Gentle three-quarter view'];
+      const lights=['Bright commercial studio light','Candy-color glow lighting','Hero spotlight with rim light','Neon edge lighting'];
+      const shadows=['Clean commercial shadows','Crisp grounded shadow','Soft studio floor shadow'];
+      const types=['Balloon bubble title','Bold athletic block text','Brush-script name','Chunky 3D bubble letters'];
+      const expressions=['Big proud smile','Bright excited grin','Cheeky playful grin','Sweet shy smile'];
+      const features=['Bright almond eyes','Dimples','Glossy lips','Soft toddler cheeks'];
+      const brows=['Defined natural brows','Gentle arched brows','Soft rounded brows'];
+      const ratios=['1:1','3:4','4:5','9:16','16:9'];
+      const scenes=['Candy pink glow backdrop','Cloud doodle backdrop','Confetti burst background','Notebook paper wall','School hallway','Sunburst flyer backdrop'];
+
+      const vars=[];
+      for(let i=0;i<3;i++){
+        const v = `Variation ${i+1}: Create the same core child identity (${identity.gender||'graduate'}, ${identity.ethnicity||'ethnicity kept'}, ${identity.skinTone||'skin tone kept'}) with ${sample(hairs)}, ${sample(arts)}, ${sample(outfits)}, ${sample(shoes)}, ${sample(accessories)}, ${sample(poses)}, ${sample(cameras)}, ${sample(lights)}, ${sample(shadows)}, ${sample(types)}, ${sample(expressions)}, ${sample(features)}, ${sample(brows)}, aspect ratio ${sample(ratios)}, and ${sample(scenes)}. Keep the result hyper-realistic, glossy, premium, flyer-ready, 8K-quality, and full-body head-to-toe with feet visible.`;
+        vars.push(v);
+      }
+      state.currentVariations=vars;
+      const host=document.getElementById('variationsOutput');
+      host.innerHTML='';
+      vars.forEach(v=>host.append(el('div',{class:'variation-box'},[v])));
+      document.getElementById('variationsOutputText').textContent=vars.join('\n\n');
+    }
+    function sample(arr){return arr[Math.floor(Math.random()*arr.length)]}
+
+    function copyText(text){ navigator.clipboard.writeText(text); }
+
+    document.addEventListener('click',(e)=>{
+      const btn=e.target.closest('[data-copy-target]');
+      if(btn){
+        const target=document.getElementById(btn.dataset.copyTarget);
+        copyText(target?.textContent || '');
+      }
+    });
+
+    buildSections();
+    applyHardGenderOptionLock();
+    buildPresetButtons();
+    buildChips('genreChips', genres, state.selectedGenres);
+    buildChips('styleChips', styles, state.selectedStyles);
+    buildChips('vocalChips', ['Vocal','Instrumental'], state.selectedVocal);
+    sliderBindings();
+    renderHistory();
+    clearAll();
+
+    const photoReferenceToggle = document.getElementById('photoReferenceToggle');
+    const usePhotoReference = document.getElementById('usePhotoReference');
+    const photoReferenceStatus = document.getElementById('photoReferenceStatus');
+
+    photoReferenceToggle.addEventListener('click',(e)=>{
+      e.preventDefault();
+      state.usePhotoReference = !state.usePhotoReference;
+      usePhotoReference.checked = state.usePhotoReference;
+      photoReferenceToggle.classList.toggle('active', state.usePhotoReference);
+      photoReferenceStatus.textContent = state.usePhotoReference ? 'On' : 'Off';
+
+      const ethnicityWrap = document.getElementById('wrap-ethnicity')?.parentElement;
+      const ethnicitySelect = document.getElementById('sel-ethnicity');
+      const ethnicityCustom = document.getElementById('custom-ethnicity');
+      const ethnicityLockBtn = document.querySelector('[data-lock="ethnicity"]');
+
+      if(state.usePhotoReference){
+        if(ethnicityWrap) ethnicityWrap.classList.add('disabled-section');
+        if(ethnicitySelect) ethnicitySelect.value = none;
+        if(ethnicityCustom) ethnicityCustom.value = '';
+        state.values.ethnicity = none;
+        state.custom.ethnicity = '';
+        if(ethnicityLockBtn){
+          state.locked.ethnicity = true;
+          ethnicityLockBtn.classList.add('locked');
+          ethnicityLockBtn.textContent = 'Locked';
+        }
+      } else {
+        if(ethnicityWrap) ethnicityWrap.classList.remove('disabled-section');
+        if(ethnicityLockBtn){
+          state.locked.ethnicity = false;
+          ethnicityLockBtn.classList.remove('locked');
+          ethnicityLockBtn.textContent = 'Lock';
+        }
+      }
+    });
+
+    document.getElementById('generateBtn').addEventListener('click', generateAll);
+    document.getElementById('randomBtn').addEventListener('click', randomize);
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+    document.getElementById('copyMainBtn').addEventListener('click', ()=>copyText(document.getElementById('mainOutput').textContent));
+    document.getElementById('savePromptBtn').addEventListener('click', savePrompt);
+    document.getElementById('variationsBtn').addEventListener('click', makeVariations);
+    document.getElementById('generateMusicBtn').addEventListener('click', generateMusicOutputs);
+    document.getElementById('generateMarketingBtn').addEventListener('click', generateMarketing);
+    document.getElementById('scrollTopBtn').addEventListener('click', ()=>window.scrollTo({top:0,behavior:'smooth'}));
+    document.getElementById('scrollBottomBtn').addEventListener('click', ()=>window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}));
+
+    // set default none chips active
+    categories.filter(c=>c.type==='multi').forEach(c=>{
+      const noneChip=document.querySelector(`#chips-${c.key} .chip[data-value="${CSS.escape(none)}"]`);
+      if(noneChip) noneChip.classList.add('active');
+    });
+  </script>
+</body>
+</html>
